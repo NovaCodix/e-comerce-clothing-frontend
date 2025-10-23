@@ -1,0 +1,519 @@
+@custom-variant dark (&:is(.dark *));
+
+html {
+  scroll-behavior: smooth;
+}
+
+:root {
+  --font-size: 16px;
+  --background: rgba(253, 247, 242, 0.7);
+  --foreground: #2a2a2a;
+  --card: #ffffff;
+  --card-foreground: #2a2a2a;
+  --popover: #ffffff;
+  --popover-foreground: #2a2a2a;
+  --primary: #b8a89a;
+  --primary-foreground: #ffffff;
+  --secondary: #e6d5d5;
+  --secondary-foreground: #2a2a2a;
+  --muted: #f5f0ed;
+  --muted-foreground: #5a5a5a;
+  --accent: #d4c5e2;
+  --accent-foreground: #2a2a2a;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+  --input: transparent;
+  --input-background: #f5f0ed;
+  --switch-background: #d4c5e2;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #b8a89a;
+  --chart-1: #b8a89a;
+  --chart-2: #a8d5ba;
+  --chart-3: #d4c5e2;
+  --chart-4: #f4b8c4;
+  --chart-5: #e6d5d5;
+  --radius: 0.75rem;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #2a2a2a;
+  --sidebar-primary: #b8a89a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f0ed;
+  --sidebar-accent-foreground: #2a2a2a;
+  --sidebar-border: rgba(0, 0, 0, 0.08);
+  --sidebar-ring: #b8a89a;
+  --promo-height: 0px;
+  
+  /* Fashion colors */
+  --beige: #f5ebe0;
+  --lavender: #d4c5e2;
+  --mint: #a8d5ba;
+  --light-gray: #e5e5e5;
+  --pastel-pink: #f4b8c4;
+}
+
+.dark {
+  --background: rgba(18, 18, 18, 0.7);
+  --foreground: #FFFFFF;
+  --card: #1e1e1e;
+  --card-foreground: #FFFFFF;
+  --popover: #1e1e1e;
+  --popover-foreground: #FFFFFF;
+  --primary: #c4b5a7;
+  --primary-foreground: #121212;
+  --secondary: #2a2a2a;
+  --secondary-foreground: #FFFFFF;
+  --muted: #2a2a2a;
+  --muted-foreground: #CCCCCC;
+  --accent: #3a3a3a;
+  --accent-foreground: #FFFFFF;
+  --destructive: #ef4444;
+  --destructive-foreground: #FFFFFF;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: transparent;
+  --input-background: #2a2a2a;
+  --ring: #c4b5a7;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: #c4b5a7;
+  --chart-2: #a8d5ba;
+  --chart-3: #d4c5e2;
+  --chart-4: #f4b8c4;
+  --chart-5: #e6d5d5;
+  --sidebar: #1e1e1e;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #c4b5a7;
+  --sidebar-primary-foreground: #121212;
+  --sidebar-accent: #2a2a2a;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #c4b5a7;
+  
+  /* Fashion colors - dark mode variants */
+  --beige: #3a3630;
+  --lavender: #3d374a;
+  --mint: #2d4038;
+  --light-gray: #2a2a2a;
+  --pastel-pink: #4a3640;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  
+  /* Separate transition rules to avoid conflicts */
+  *:not(html):not(body):not(#root) {
+    transition: color 200ms ease-in-out, 
+                background-color 200ms ease-in-out, 
+                border-color 200ms ease-in-out;
+  }
+
+  html {
+    @apply bg-background text-foreground;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  #root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+  }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+  /* Smooth scrolling for all browsers */
+  scroll-behavior: smooth;
+  /* iOS Safari specific fixes */
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  /* Ensure smooth scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Better iOS support */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    -webkit-overflow-scrolling: touch !important;
+    -webkit-transform: translate3d(0, 0, 0);
+    overflow-y: auto !important;
+    position: relative !important;
+    height: auto !important;
+  }
+  
+  #root {
+    -webkit-overflow-scrolling: touch !important;
+    overflow: visible !important;
+    position: relative !important;
+  }
+  
+  /* Force scroll on all main containers */
+  main, section {
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+/* Ensure footer is always at bottom on mobile */
+@media screen and (max-width: 1024px) {
+  footer {
+    position: relative;
+    width: 100%;
+    background-color: #2a2a2a !important;
+  }
+}
+
+/* Mobile and Tablet optimizations */
+@media screen and (max-width: 768px) {
+  /* Optimize button interactions */
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    cursor: pointer;
+    pointer-events: auto !important;
+  }
+  
+  /* Ensure all interactive elements are clickable */
+  button, a, [role="button"], [type="button"], [type="submit"] {
+    pointer-events: auto !important;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  /* Improve input focus on mobile */
+  input, textarea {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+  
+  /* Ensure smooth scrolling */
+  html, body {
+    -webkit-overflow-scrolling: touch !important;
+    overflow-y: auto !important;
+  }
+  
+  /* Prevent any scroll locking */
+  * {
+    overscroll-behavior: contain;
+  }
+}
+
+/* Smooth transitions for all interactive elements */
+button, a, [role="button"] {
+  transition: all 200ms ease-in-out;
+}
+
+/* Enhanced scroll behavior */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Ensure interactive elements are always clickable */
+button,
+a,
+[role="button"],
+[type="button"],
+[type="submit"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Optimize animations for mobile */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    animation-timing-function: ease-in-out;
+  }
+}
+
+/* Force all buttons to be interactive on mobile */
+@media screen and (max-width: 1024px) {
+  button {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* iOS-specific optimizations */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Prevent iOS bounce scroll on modals */
+  [data-slot="dialog-content"] {
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+  
+  /* Ensure modals render properly on iOS */
+  [role="dialog"],
+  [data-radix-dialog-content] {
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    transform: translate3d(0, 0, 0) !important;
+    will-change: transform !important;
+  }
+}
+
+/* iOS-specific fixes for Safari */
+@supports (-webkit-touch-callout: none) {
+  /* Fix for iOS Safari modal rendering */
+  [data-radix-portal] {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+  
+  /* Ensure content is visible in modals on iOS */
+  [data-slot="dialog-content"] > * {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  
+  /* Fix button clicks on iOS */
+  button, a, [role="button"] {
+    cursor: pointer;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Fix scrolling in modals on iOS */
+  .overflow-y-auto,
+  [data-slot="dialog-content"] {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
+
+  /* WhatsApp button fixed on iOS */
+  button[aria-label*="WhatsApp"] {
+    position: fixed !important;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+}
+
+/* Sticky Header - Always visible on scroll */
+header {
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* WhatsApp Button - Always visible and accessible */
+button[aria-label*="WhatsApp"],
+a[aria-label*="WhatsApp"] {
+  position: fixed !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Critical: Ensure scroll works on all devices */
+html {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  position: relative !important;
+}
+
+body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  position: relative !important;
+}
+
+#root {
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  position: relative !important;
+}
+
+/* Mobile scroll optimization */
+@media screen and (max-width: 1024px) {
+  html, body {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+    position: relative !important;
+  }
+  
+  #root {
+    overflow: visible !important;
+    position: relative !important;
+  }
+
+  /* WhatsApp button always visible on mobile */
+  button[aria-label*="WhatsApp"] {
+    position: fixed !important;
+    bottom: 1.5rem !important;
+    right: 1.5rem !important;
+    z-index: 9999 !important;
+  }
+  
+  /* Ensure main content is scrollable */
+  main, section, div:not([role="dialog"]):not([role="alertdialog"]) {
+    overflow: visible !important;
+  }
+  
+  /* Allow touch scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Allow scrolling on buttons and links */
+  button, a {
+    touch-action: manipulation;
+  }
+}
+
+/* Header spacer that includes the promo bar height so the flow doesn't jump
+   when the header is visually translated. The base header height mirrors the
+   previous Tailwind utilities: 5rem (h-20) for mobile, 7rem (md:h-28) for md+.
+   We add var(--promo-height) which is updated by the PromoBar component. */
+.header-spacer {
+  height: calc(var(--promo-height, 0px) + 5rem);
+}
+
+@media (min-width: 768px) {
+  .header-spacer {
+    height: calc(var(--promo-height, 0px) + 7rem);
+  }
+}
+
+/* Ensure header transform is smooth and uses GPU compositing */
+header {
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}

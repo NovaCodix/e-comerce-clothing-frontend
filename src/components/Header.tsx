@@ -111,7 +111,7 @@ export function Header({
               variant="ghost"
               size="icon"
               className="relative rounded-full hover:bg-accent hidden sm:flex"
-              onClick={onOrderTrackingClick}
+              onClick={() => navigate('/seguimiento')}
               title="Seguimiento de pedidos"
             >
               <motion.div
@@ -237,7 +237,7 @@ export function Header({
                         <Button 
                           variant="outline" 
                           className="w-full justify-start h-12 rounded-xl border-border hover:bg-accent/50" 
-                          onClick={() => handleActionClick(onOrderTrackingClick)}
+                          onClick={() => { navigate('/seguimiento'); setMobileMenuOpen(false); }}
                         >
                           <Package className="w-5 h-5 mr-3" />
                           <span>Mis Pedidos</span>
@@ -299,7 +299,7 @@ export function Header({
       </div>
 
       {/* Categories - Desktop (hidden on Home '/') */}
-      {location.pathname !== "/" && (
+      {location.pathname !== "/" && location.pathname !== "/seguimiento" && (
         <nav className="hidden md:block border-t border-border">
           <div className="container mx-auto px-4">
             <ul className="flex items-center justify-center gap-8 py-3">

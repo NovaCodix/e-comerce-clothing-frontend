@@ -10,6 +10,7 @@ import { FavoritesDrawer } from "./components/FavoritesDrawer";
 import { CheckoutModal } from "./components/CheckoutModal";
 import { AuthModal } from "./components/AuthModal";
 import { OrderTracker, Order } from "./components/OrderTracker";
+import OrderTrackerPage from "./pages/OrderTrackerPage";
 import { SizeGuide } from "./components/SizeGuide";
 import { SpringCollection } from "./components/SpringCollection";
 import { AccessoriesCollection } from "./components/AccessoriesCollection";
@@ -204,6 +205,24 @@ export default function App() {
     ],
   });
 
+  // Additional past order for the tracker demo
+  const pastOrder: Order = {
+    id: "2",
+    orderNumber: "PO-159-00737",
+    status: "delivered",
+    items: [{ name: "Accesorios Premium", quantity: 2 }],
+    total: 152.25,
+    createdAt: new Date(2024, 4, 3),
+    estimatedDelivery: new Date(2024, 4, 9),
+    trackingSteps: [
+      { label: "Pedido confirmado", completed: true, date: new Date(2024, 4, 1, 9, 0) },
+      { label: "En camino", completed: true, date: new Date(2024, 4, 5, 12, 0) },
+      { label: "Entregado", completed: true, date: new Date(2024, 4, 9, 15, 30) }
+    ],
+  };
+
+  const ordersForTracker: Order[] = [currentOrder, pastOrder];
+
   // Apply dark mode
   useEffect(() => {
     if (darkMode) {
@@ -234,6 +253,18 @@ export default function App() {
     toast.success(`${product.name} agregado al carrito`, {
       description: `Talla: ${selectedSize}`,
     });
+  };
+
+  // helper used by OrderTracker page to add items by product name
+  const handleAddToCartByName = (productName: string) => {
+    const found = mockProducts.find((p) => p.name === productName);
+    if (found) {
+      handleAddToCart(found);
+      // open cart drawer so user sees the items
+      setIsCartOpen(true);
+    } else {
+      toast.error(`Producto '${productName}' no encontrado en catálogo`);
+    }
   };
 
   const handleUpdateQuantity = (id: number, quantity: number) => {
@@ -332,6 +363,10 @@ export default function App() {
               />
             } 
           />
+          <Route
+            path="/seguimiento"
+            element={<OrderTrackerPage orders={ordersForTracker} onAddToCart={handleAddToCartByName} />}
+          />
         </Routes>
 
   {/* Small spacer so page content (product cards) never sit flush against the Footer */}
@@ -378,7 +413,7 @@ export default function App() {
       <OrderTracker
         open={isOrderTrackerOpen}
         onClose={() => setIsOrderTrackerOpen(false)}
-        order={currentOrder}
+        orders={ordersForTracker}
       />
 
       <SizeGuide

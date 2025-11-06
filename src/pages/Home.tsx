@@ -90,6 +90,8 @@ export function Home({
       <div id="instagram-section">
         <InstagramGallery />
       </div>
+
+      
     </>
   );
 }

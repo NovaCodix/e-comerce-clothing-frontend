@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
-import { CreditCard, Smartphone, DollarSign } from "lucide-react";
+import { CreditCard, Smartphone, DollarSign, Copy } from "lucide-react";
 import { useState } from "react";
 import { CartItem } from "./CartDrawer";
 
@@ -15,8 +15,25 @@ interface CheckoutModalProps {
 }
 
 export function CheckoutModal({ open, onClose, items, total }: CheckoutModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "yape" | "plin" | "paypal">("card");
+  const [paymentMethod, setPaymentMethod] = useState<"yape" | "account">("yape");
   const [discountCode, setDiscountCode] = useState("");
+
+  const storeAccount = {
+    bank: "BCP",
+    accountNumber: "123-4567890-12",
+    interbank: "00123456789012345678",
+    holder: "Tienda Ejemplo S.A.",
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // UX: mostrar una pequeña confirmación (esto es mínimo — se puede mejorar con toasts)
+      alert("Copiado al portapapeles");
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +44,7 @@ export function CheckoutModal({ open, onClose, items, total }: CheckoutModalProp
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-background">
+    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-background p-6 sm:p-8">
         <DialogHeader>
           <DialogTitle>Finalizar Compra</DialogTitle>
           <DialogDescription className="sr-only">
@@ -35,62 +52,55 @@ export function CheckoutModal({ open, onClose, items, total }: CheckoutModalProp
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+  <form onSubmit={handleSubmit} className="space-y-8">
           {/* Payment Method Selection */}
           <div>
             <h3 className="mb-4">Método de Pago</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("card")}
-                className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                  paymentMethod === "card"
-                    ? "border-[#b8a89a] bg-[#b8a89a]/10"
-                    : "border-border hover:border-[#b8a89a]/50"
-                }`}
-              >
-                <CreditCard className="w-6 h-6" />
-                <span>Tarjeta</span>
-              </button>
-              
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <button
                 type="button"
                 onClick={() => setPaymentMethod("yape")}
-                className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                className={`p-6 rounded-2xl border-2 transition-all flex items-center gap-4 text-left shadow-sm ${
                   paymentMethod === "yape"
-                    ? "border-[#b8a89a] bg-[#b8a89a]/10"
-                    : "border-border hover:border-[#b8a89a]/50"
+                    ? "border-[#b8a89a] bg-[#b8a89a]/8"
+                    : "border-white/20 dark:border-border hover:border-[#b8a89a]/40 bg-transparent"
                 }`}
               >
-                <Smartphone className="w-6 h-6" />
-                <span>Yape</span>
+                <div className="p-4 rounded-lg bg-card/40 dark:bg-card/20">
+                  <Smartphone className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="font-medium">Yape (QR)</div>
+                  <div className="text-sm text-muted-foreground">Escanea el QR con la app Yape para pagar rápidamente</div>
+                </div>
               </button>
-              
+
               <button
                 type="button"
-                onClick={() => setPaymentMethod("plin")}
-                className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                  paymentMethod === "plin"
-                    ? "border-[#b8a89a] bg-[#b8a89a]/10"
-                    : "border-border hover:border-[#b8a89a]/50"
+                onClick={() => setPaymentMethod("account")}
+                className={`p-6 rounded-2xl border-2 transition-all flex items-center gap-4 text-left shadow-sm ${
+                  paymentMethod === "account"
+                    ? "border-[#b8a89a] bg-[#b8a89a]/8"
+                    : "border-white/20 dark:border-border hover:border-[#b8a89a]/40 bg-transparent"
                 }`}
               >
-                <Smartphone className="w-6 h-6" />
-                <span>Plin</span>
+                <div className="p-4 rounded-lg bg-card/40 dark:bg-card/20">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="font-medium">Transferencia / Depósito</div>
+                  <div className="text-sm text-muted-foreground">Paga transfiriendo al número de cuenta de la tienda</div>
+                </div>
               </button>
-              
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("paypal")}
-                className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                  paymentMethod === "paypal"
-                    ? "border-[#b8a89a] bg-[#b8a89a]/10"
-                    : "border-border hover:border-[#b8a89a]/50"
-                }`}
-              >
-                <DollarSign className="w-6 h-6" />
-                <span>PayPal</span>
-              </button>
+
+              {/*
+                Código comentado: anteriores métodos (Tarjeta, Plin, PayPal) — dejado como referencia
+                para reactivación futura. Mantener aquí para que sea fácil copiar/pegar.
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                ... (Tarjeta, Plin, PayPal buttons) ...
+              </div>
+              */}
             </div>
           </div>
 
@@ -99,81 +109,106 @@ export function CheckoutModal({ open, onClose, items, total }: CheckoutModalProp
           {/* Shipping Information */}
           <div>
             <h3 className="mb-4">Información de Envío</h3>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="firstName">Nombre</Label>
-                <Input id="firstName" placeholder="Tu nombre" required />
+                <Label htmlFor="firstName" className="mb-3">Nombre</Label>
+                  <Input id="firstName" placeholder="Tu nombre" required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
               </div>
               <div>
-                <Label htmlFor="lastName">Apellido</Label>
-                <Input id="lastName" placeholder="Tu apellido" required />
+                <Label htmlFor="lastName" className="mb-3">Apellido</Label>
+                  <Input id="lastName" placeholder="Tu apellido" required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
               </div>
               <div className="md:col-span-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="tu@email.com" required />
+                <Label htmlFor="email" className="mb-3">Email</Label>
+                  <Input id="email" type="email" placeholder="tu@email.com" required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
               </div>
               <div className="md:col-span-2">
-                <Label htmlFor="address">Dirección</Label>
-                <Input id="address" placeholder="Calle, número, etc." required />
+                <Label htmlFor="address" className="mb-3">Dirección</Label>
+                  <Input id="address" placeholder="Calle, número, etc." required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
               </div>
               <div>
-                <Label htmlFor="city">Ciudad</Label>
-                <Input id="city" placeholder="Ciudad" required />
+                <Label htmlFor="city" className="mb-3">Ciudad</Label>
+                  <Input id="city" placeholder="Ciudad" required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
               </div>
               <div>
-                <Label htmlFor="zipCode">Código Postal</Label>
-                <Input id="zipCode" placeholder="12345" required />
+                <Label htmlFor="zipCode" className="mb-3">Código Postal</Label>
+                  <Input id="zipCode" placeholder="12345" required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
               </div>
             </div>
           </div>
 
           <Separator />
 
-          {/* Payment Details */}
-          {paymentMethod === "card" && (
-            <div>
-              <h3 className="mb-4">Detalles de Pago</h3>
-              <div className="space-y-4">
+          {/* Payment Details: mostrar sólo Yape (QR) y Cuenta de la tienda. Mantuvimos el código
+              original comentado arriba para reactivar métodos en el futuro. */}
+
+          {paymentMethod === "yape" && (
+            <div className="bg-muted p-6 rounded-xl text-center border border-white/20 dark:border-[#18303a]">
+              <p className="mb-3">Escanea este QR con Yape para pagar</p>
+              <div className="w-56 h-56 bg-white/95 dark:bg-[#071522] mx-auto rounded-xl flex items-center justify-center border border-white/20 dark:border-[#18303a] shadow-sm">
+                {/* Ideal: reemplazar por imagen de QR real: <img src="/path/to/yape-qr.png" className="w-full h-full object-contain rounded-md" /> */}
+                <div className="text-muted-foreground">QR Code (placeholder)</div>
+              </div>
+              <p className="mt-4">Monto a pagar: <strong>S/ {total.toFixed(2)}</strong></p>
+              <div className="flex justify-center gap-2 mt-3">
+                <Button type="button" variant="outline" onClick={() => copyToClipboard(total.toFixed(2))}>
+                  <Copy className="mr-2 w-4 h-4" /> Copiar monto
+                </Button>
+                <Button type="button" onClick={() => alert('Abre la app Yape y escanea el QR')}>¿Cómo pago?</Button>
+              </div>
+            </div>
+          )}
+
+          {paymentMethod === "account" && (
+            <div className="bg-white/95 dark:bg-[#061219] p-6 rounded-xl shadow-sm border border-white/20 dark:border-[#18303a]">
+              <h4 className="mb-3">Datos de la cuenta</h4>
+              <div className="grid gap-3">
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Banco</div>
+                    <div className="font-medium">{storeAccount.bank}</div>
+                  </div>
+                  <Button type="button" variant="ghost" onClick={() => copyToClipboard(storeAccount.bank)}>
+                    <Copy className="w-4 h-4 mr-2" /> Copiar
+                  </Button>
+                </div>
+
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Número de cuenta</div>
+                    <div className="font-medium">{storeAccount.accountNumber}</div>
+                  </div>
+                  <Button type="button" variant="ghost" onClick={() => copyToClipboard(storeAccount.accountNumber)}>
+                    <Copy className="w-4 h-4 mr-2" /> Copiar
+                  </Button>
+                </div>
+
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Interbank</div>
+                    <div className="font-medium">{storeAccount.interbank}</div>
+                  </div>
+                  <Button type="button" variant="ghost" onClick={() => copyToClipboard(storeAccount.interbank)}>
+                    <Copy className="w-4 h-4 mr-2" /> Copiar
+                  </Button>
+                </div>
+
                 <div>
-                  <Label htmlFor="cardNumber">Número de Tarjeta</Label>
-                  <Input
-                    id="cardNumber"
-                    placeholder="1234 5678 9012 3456"
-                    required
-                  />
+                  <div className="text-sm text-muted-foreground">Titular</div>
+                  <div className="font-medium">{storeAccount.holder}</div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="expiry">Fecha de Vencimiento</Label>
-                    <Input id="expiry" placeholder="MM/AA" required />
-                  </div>
-                  <div>
-                    <Label htmlFor="cvv">CVV</Label>
-                    <Input id="cvv" placeholder="123" required />
+
+                <div>
+                  <div className="text-sm text-muted-foreground">Monto a transferir</div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <div className="font-medium">S/ {total.toFixed(2)}</div>
+                    <Button type="button" variant="outline" onClick={() => copyToClipboard(total.toFixed(2))}>
+                      <Copy className="w-4 h-4 mr-2" /> Copiar monto
+                    </Button>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {(paymentMethod === "yape" || paymentMethod === "plin") && (
-            <div className="bg-muted p-6 rounded-xl text-center">
-              <p className="mb-4">
-                Escanea el código QR desde tu app de {paymentMethod === "yape" ? "Yape" : "Plin"}
-              </p>
-              <div className="w-48 h-48 bg-card mx-auto rounded-xl flex items-center justify-center border-2">
-                <p className="text-muted-foreground">QR Code</p>
-              </div>
-              <p className="mt-4">Monto a pagar: S/ {total.toFixed(2)}</p>
-            </div>
-          )}
-
-          {paymentMethod === "paypal" && (
-            <div className="bg-muted p-6 rounded-xl text-center">
-              <p className="mb-4">Serás redirigido a PayPal para completar el pago</p>
-              <Button type="button" className="bg-[#0070ba] hover:bg-[#003087]">
-                Continuar con PayPal
-              </Button>
+              <p className="mt-4 text-sm text-muted-foreground">Después de realizar la transferencia, envíanos el comprobante para que podamos validar y despachar tu pedido.</p>
             </div>
           )}
 
@@ -181,13 +216,14 @@ export function CheckoutModal({ open, onClose, items, total }: CheckoutModalProp
 
           {/* Discount Code */}
           <div>
-            <Label htmlFor="discount">Código de Descuento</Label>
+            <Label htmlFor="discount" className="mb-3">Código de Descuento</Label>
             <div className="flex gap-2">
               <Input
                 id="discount"
                 placeholder="Ingresa tu código"
                 value={discountCode}
                 onChange={(e) => setDiscountCode(e.target.value)}
+                className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40"
               />
               <Button type="button" variant="outline">
                 Aplicar

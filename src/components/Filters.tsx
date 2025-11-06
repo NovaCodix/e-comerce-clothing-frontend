@@ -128,7 +128,7 @@ export function Filters({ filters, onFilterChange }: FiltersProps) {
         <div className="px-2">
           <Slider
             value={filters.priceRange}
-            onValueChange={(value) => onFilterChange({ ...filters, priceRange: value as [number, number] })}
+            onValueChange={(value: [number, number]) => onFilterChange({ ...filters, priceRange: value as [number, number] })}
             max={500}
             step={10}
             className="mb-4"

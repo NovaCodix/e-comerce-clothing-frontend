@@ -1,24 +1,15 @@
 import { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { PromoBar } from "./components/PromoBar";
 import { Header } from "./components/Header";
-import { Hero } from "./components/Hero";
-import { FeaturedCategories } from "./components/FeaturedCategories";
-import { BenefitsSection } from "./components/BenefitsSection";
-import { TrendingProducts } from "./components/TrendingProducts";
-import { CollectionBanner } from "./components/CollectionBanner";
-import { Filters } from "./components/Filters";
-import { ProductGrid } from "./components/ProductGrid";
+import { Home } from "./pages/Home";
+import { Collection } from "./pages/Collection";
 import { ProductDetailModal } from "./components/ProductDetailModal";
 import { CartDrawer, CartItem } from "./components/CartDrawer";
 import { FavoritesDrawer } from "./components/FavoritesDrawer";
 import { CheckoutModal } from "./components/CheckoutModal";
 import { AuthModal } from "./components/AuthModal";
 import { OrderTracker, Order } from "./components/OrderTracker";
-import { Testimonials } from "./components/Testimonials";
-import { NewsletterSection } from "./components/NewsletterSection";
-import { InstagramGallery } from "./components/InstagramGallery";
-import { ReturnsPolicy } from "./components/ReturnsPolicy";
-import { AboutSection } from "./components/AboutSection";
 import { SizeGuide } from "./components/SizeGuide";
 import { SpringCollection } from "./components/SpringCollection";
 import { AccessoriesCollection } from "./components/AccessoriesCollection";
@@ -26,9 +17,9 @@ import { AnimatedBackground } from "./components/AnimatedBackground";
 import { Footer } from "./components/Footer";
 import { WhatsAppButton } from "./components/WhatsAppButton";
 import { Product } from "./components/ProductCard";
-import { Button } from "./components/ui/button";
+import { ScrollToTop } from "./components/ScrollToTop";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./components/ui/sheet";
-import { toast, Toaster } from "sonner@2.0.3";
+import { toast, Toaster } from "sonner";
 
 // Mock products data
 const mockProducts: Product[] = [
@@ -181,12 +172,6 @@ const mockProducts: Product[] = [
 export default function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Todos");
-  const [filters, setFilters] = useState({
-    categories: [] as string[],
-    sizes: [] as string[],
-    colors: [] as string[],
-    priceRange: [0, 500] as [number, number],
-  });
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -194,12 +179,10 @@ export default function App() {
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isOrderTrackerOpen, setIsOrderTrackerOpen] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isSpringCollectionOpen, setIsSpringCollectionOpen] = useState(false);
   const [isAccessoriesCollectionOpen, setIsAccessoriesCollectionOpen] = useState(false);
-  const [showMainProducts, setShowMainProducts] = useState(false);
 
   // Mock order for demonstration
   const [currentOrder] = useState<Order>({
@@ -229,49 +212,6 @@ export default function App() {
       document.documentElement.classList.remove("dark");
     }
   }, [darkMode]);
-
-  // Filter products
-  const filteredProducts = mockProducts.filter((product) => {
-    // Special category: Ofertas (Sale items)
-    if (selectedCategory === "Ofertas" && !product.isSale) {
-      return false;
-    }
-    
-    // Category filter
-    if (filters.categories.length > 0 && !filters.categories.includes(product.category)) {
-      return false;
-    }
-    
-    // Size filter
-    if (filters.sizes.length > 0) {
-      const hasMatchingSize = product.sizes.some((size) => filters.sizes.includes(size));
-      if (!hasMatchingSize) return false;
-    }
-    
-    // Color filter
-    if (filters.colors.length > 0) {
-      const colorMap: { [key: string]: string } = {
-        Beige: "#f5ebe0",
-        Lavanda: "#d4c5e2",
-        Menta: "#a8d5ba",
-        Rosa: "#f4b8c4",
-        Gris: "#e5e5e5",
-        Negro: "#2a2a2a",
-        Blanco: "#ffffff",
-      };
-      
-      const selectedColorHexes = filters.colors.map((c) => colorMap[c]);
-      const hasMatchingColor = product.colors.some((color) => selectedColorHexes.includes(color));
-      if (!hasMatchingColor) return false;
-    }
-    
-    // Price filter
-    if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) {
-      return false;
-    }
-    
-    return true;
-  });
 
   const handleAddToCart = (product: Product, size?: string) => {
     const selectedSize = size || product.sizes[0];
@@ -323,32 +263,6 @@ export default function App() {
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
-    setShowMainProducts(true);
-    
-    // Apply category filter
-    if (category === "Todos") {
-      setFilters({ ...filters, categories: [] });
-    } else if (category === "Ofertas") {
-      // Show only sale items - we'll filter this in the product filter logic
-      setFilters({ ...filters, categories: [] });
-    } else {
-      // Map category names to product categories
-      const categoryMap: { [key: string]: string[] } = {
-        "Mujer": ["Vestidos", "Blusas"],
-        "Hombre": ["Pantalones", "Chaquetas"],
-        "Niños": ["Niños"],
-        "Accesorios": ["Accesorios"],
-      };
-      setFilters({ ...filters, categories: categoryMap[category] || [] });
-    }
-    
-    // Scroll to products section
-    setTimeout(() => {
-      const element = document.getElementById('products-section');
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
   };
 
   const handleCheckout = () => {
@@ -365,7 +279,7 @@ export default function App() {
   const total = cartTotal + shipping + tax;
 
   return (
-    <>
+    <Router>
       <Toaster position="top-center" richColors />
       
       <AnimatedBackground darkMode={darkMode} />
@@ -388,113 +302,41 @@ export default function App() {
           selectedCategory={selectedCategory}
         />
 
-        <Hero />
-
-        {/* Featured Categories */}
-        <div id="categories-section">
-          <FeaturedCategories onCategoryClick={(cat) => {
-            handleCategorySelect(cat);
-            setShowMainProducts(true);
-            // Scroll to products section
-            setTimeout(() => {
-              document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-          }} />
-        </div>
-
-        {/* Benefits Section */}
-        <div id="benefits-section">
-          <BenefitsSection />
-        </div>
-
-        {/* Trending Products */}
-        <div id="trending-section">
-          <TrendingProducts
-            products={mockProducts}
-            onAddToCart={handleAddToCart}
-            onViewDetails={setSelectedProduct}
-            favoriteIds={favoriteIds}
-            onToggleFavorite={handleToggleFavorite}
+  <ScrollToTop />
+  <Routes>
+          <Route 
+            path="/" 
+            element={
+              <Home
+                products={mockProducts}
+                onCategorySelect={handleCategorySelect}
+                onAddToCart={handleAddToCart}
+                onViewDetails={setSelectedProduct}
+                favoriteIds={favoriteIds}
+                onToggleFavorite={handleToggleFavorite}
+                onSpringCollectionOpen={() => setIsSpringCollectionOpen(true)}
+                onAccessoriesCollectionOpen={() => setIsAccessoriesCollectionOpen(true)}
+              />
+            } 
           />
-        </div>
-
-        {/* Collection Banner */}
-        <div id="collection-section">
-          <CollectionBanner 
-            onSpringClick={() => {
-              console.log('Opening Spring Collection Modal');
-              setIsSpringCollectionOpen(true);
-            }}
-            onAccessoriesClick={() => {
-              console.log('Opening Accessories Collection Modal');
-              setIsAccessoriesCollectionOpen(true);
-            }}
+          <Route 
+            path="/coleccion" 
+            element={
+              <Collection
+                products={mockProducts}
+                selectedCategory={selectedCategory}
+                onAddToCart={handleAddToCart}
+                onViewDetails={setSelectedProduct}
+                favoriteIds={favoriteIds}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            } 
           />
-        </div>
+        </Routes>
 
-        {/* Main Products Section */}
-        {showMainProducts && (
-          <main id="products-section" className="container mx-auto px-4 py-12 flex-1 w-full">
-            <div className="flex flex-col lg:flex-row gap-8">
-              {/* Filters sidebar - Desktop */}
-              <div className="hidden lg:block">
-                <Filters filters={filters} onFilterChange={setFilters} />
-              </div>
-
-              {/* Products grid */}
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <h2 className="mb-2">Nuestra Colección</h2>
-                    <p className="text-muted-foreground">
-                      {filteredProducts.length} productos encontrados
-                    </p>
-                  </div>
-
-                  {/* Mobile filters button */}
-                  <Button 
-                    variant="outline" 
-                    className="lg:hidden rounded-full"
-                    onClick={() => setIsFiltersOpen(true)}
-                  >
-                    Filtros
-                  </Button>
-                </div>
-
-                <ProductGrid
-                  products={filteredProducts}
-                  onAddToCart={(product) => handleAddToCart(product)}
-                  onViewDetails={setSelectedProduct}
-                  favoriteIds={favoriteIds}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              </div>
-            </div>
-          </main>
-        )}
-
-        {/* About Section */}
-        <AboutSection />
-
-        {/* Returns Policy */}
-        <ReturnsPolicy />
-
-        {/* Testimonials */}
-        <div id="testimonials-section">
-          <Testimonials />
-        </div>
-
-        {/* Newsletter */}
-        <div id="newsletter-section">
-          <NewsletterSection />
-        </div>
-
-        {/* Instagram Gallery */}
-        <div id="instagram-section">
-          <InstagramGallery />
-        </div>
-
-        <Footer onOpenSizeGuide={() => setIsSizeGuideOpen(true)} />
+  {/* Small spacer so page content (product cards) never sit flush against the Footer */}
+  <div aria-hidden="true" className="h-12 md:h-20" />
+  <Footer onOpenSizeGuide={() => setIsSizeGuideOpen(true)} />
 
       {/* Modals and drawers */}
       <ProductDetailModal
@@ -568,24 +410,9 @@ export default function App() {
         favoriteIds={favoriteIds}
       />
 
-      {/* Mobile Filters Drawer */}
-      <Sheet open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-        <SheetContent side="left" className="w-full sm:w-80 overflow-y-auto p-0 flex flex-col">
-          <SheetHeader className="px-6 pt-6 pb-2 flex-shrink-0">
-            <SheetTitle>Filtros</SheetTitle>
-            <SheetDescription className="sr-only">
-              Filtra productos por categorías, tallas, colores y precio
-            </SheetDescription>
-          </SheetHeader>
-          <div className="flex-1 overflow-y-auto">
-            <Filters filters={filters} onFilterChange={setFilters} />
-          </div>
-        </SheetContent>
-      </Sheet>
-
       {/* WhatsApp Floating Button - Always visible */}
       <WhatsAppButton />
       </div>
-    </>
+    </Router>
   );
 }

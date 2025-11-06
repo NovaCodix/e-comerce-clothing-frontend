@@ -5,7 +5,8 @@ import { Badge } from "./ui/badge";
 import { SearchBar } from "./SearchBar";
 import { Product } from "./ProductCard";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 interface HeaderProps {
   onCartClick: () => void;
@@ -38,10 +39,35 @@ export function Header({
 }: HeaderProps) {
   const categories = ["Todos", "Mujer", "Hombre", "Niños", "Accesorios", "Ofertas"];
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const headerRef = useRef<HTMLElement | null>(null);
+  const spacerRef = useRef<HTMLDivElement | null>(null);
+
+  // Keep the spacer height in sync with the actual header height (covers promo + nav rows)
+  useEffect(() => {
+    const updateSpacer = () => {
+      const h = headerRef.current?.offsetHeight ?? 0;
+      if (spacerRef.current) {
+        spacerRef.current.style.height = h + "px";
+      }
+      // also expose as CSS var if other parts want to use it
+      document.documentElement.style.setProperty("--header-offset", h + "px");
+    };
+
+    updateSpacer();
+    window.addEventListener("resize", updateSpacer);
+    return () => window.removeEventListener("resize", updateSpacer);
+  }, []);
 
   const handleCategoryClick = (category: string) => {
     onCategorySelect(category);
     setMobileMenuOpen(false);
+    navigate('/coleccion');
+  };
+
+  const handleLogoClick = () => {
+    navigate('/');
   };
 
   const handleActionClick = (action: () => void) => {
@@ -55,17 +81,21 @@ export function Header({
         className="bg-background/95 backdrop-blur-lg border-b border-border fixed left-0 right-0 z-50 transition-transform duration-300"
         // keep header positioned at top and animate its visual position with transform (GPU-accelerated)
         style={{ top: 0, transform: 'translateY(var(--promo-height, 0px))' }}
+        ref={headerRef}
       >
       {/* Top bar */}
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <button 
+            onClick={handleLogoClick}
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          >
             <div className="w-8 h-8 bg-[#b8a89a] rounded-lg flex items-center justify-center">
               <span className="text-white">✨</span>
             </div>
             <span className="tracking-wide">ESTILO</span>
-          </div>
+          </button>
 
           {/* Search bar - Desktop */}
           <SearchBar 
@@ -268,31 +298,33 @@ export function Header({
         </div>
       </div>
 
-      {/* Categories - Desktop */}
-      <nav className="hidden md:block border-t border-border">
-        <div className="container mx-auto px-4">
-          <ul className="flex items-center justify-center gap-8 py-3">
-            {categories.map((category) => (
-              <li key={category}>
-                <button 
-                  onClick={() => onCategorySelect(category)}
-                  className={`hover:text-primary transition-colors relative ${
-                    selectedCategory === category ? "text-primary" : ""
-                  }`}
-                >
-                  {category}
-                  {selectedCategory === category && (
-                    <motion.div
-                      layoutId="category-underline"
-                      className="absolute -bottom-3 left-0 right-0 h-0.5 bg-primary"
-                    />
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </nav>
+      {/* Categories - Desktop (hidden on Home '/') */}
+      {location.pathname !== "/" && (
+        <nav className="hidden md:block border-t border-border">
+          <div className="container mx-auto px-4">
+            <ul className="flex items-center justify-center gap-8 py-3">
+              {categories.map((category) => (
+                <li key={category}>
+                  <button 
+                    onClick={() => handleCategoryClick(category)}
+                    className={`hover:text-primary transition-colors relative ${
+                      selectedCategory === category ? "text-primary" : ""
+                    }`}
+                  >
+                    {category}
+                    {selectedCategory === category && (
+                      <motion.div
+                        layoutId="category-underline"
+                        className="absolute -bottom-3 left-0 right-0 h-0.5 bg-primary"
+                      />
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </nav>
+      )}
 
       {/* Mobile search */}
       <div className="md:hidden px-4 pb-4">
@@ -303,11 +335,10 @@ export function Header({
       </div>
     </header>
 
-        {/* Spacer to prevent content being hidden behind the fixed header.
-            The spacer's height is header base + promo height (defined in CSS) so
-            when the header is translated down visually the document flow still
-            reserves the correct space and prevents layout jumps. */}
-        <div aria-hidden="true" className="header-spacer" />
+    {/* Spacer to prevent content being hidden behind the fixed header.
+      We set its height dynamically in JS to match the header's real height
+      (covers promo + nav rows). */}
+    <div aria-hidden="true" className="header-spacer" ref={spacerRef} />
     </>
   );
 }

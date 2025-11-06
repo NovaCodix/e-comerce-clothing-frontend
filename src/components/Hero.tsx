@@ -2,32 +2,39 @@ import { Button } from "./ui/button";
 import { motion } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { ChevronDown, Sparkles } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export function Hero() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const scrollToContent = () => {
-    try {
-      const categoriesSection = document.getElementById('categories-section');
-      if (categoriesSection) {
-        // Use scrollIntoView for better cross-browser support
-        categoriesSection.scrollIntoView({ 
-          behavior: "smooth", 
-          block: "start",
-          inline: "nearest"
-        });
-      } else {
-        // Fallback to window scroll
-        const scrollTarget = Math.min(window.innerHeight * 0.85, document.body.scrollHeight);
-        window.scrollTo({
-          top: scrollTarget,
-          behavior: "smooth",
-        });
+    // Si estamos en home, scroll normal
+    if (location.pathname === '/') {
+      try {
+        const categoriesSection = document.getElementById('categories-section');
+        if (categoriesSection) {
+          categoriesSection.scrollIntoView({ 
+            behavior: "smooth", 
+            block: "start",
+            inline: "nearest"
+          });
+        } else {
+          const scrollTarget = Math.min(window.innerHeight * 0.85, document.body.scrollHeight);
+          window.scrollTo({
+            top: scrollTarget,
+            behavior: "smooth",
+          });
+        }
+      } catch (error) {
+        const categoriesSection = document.getElementById('categories-section');
+        if (categoriesSection) {
+          categoriesSection.scrollIntoView(true);
+        }
       }
-    } catch (error) {
-      // Fallback for browsers that don't support smooth scroll
-      const categoriesSection = document.getElementById('categories-section');
-      if (categoriesSection) {
-        categoriesSection.scrollIntoView(true);
-      }
+    } else {
+      // Si no, navegar a colección
+      navigate('/coleccion');
     }
   };
 

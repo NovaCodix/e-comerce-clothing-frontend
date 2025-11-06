@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { useNavigate } from "react-router-dom";
 
 interface Category {
   name: string;
@@ -12,6 +13,8 @@ interface FeaturedCategoriesProps {
 }
 
 export function FeaturedCategories({ onCategoryClick }: FeaturedCategoriesProps) {
+  const navigate = useNavigate();
+  
   const categories: Category[] = [
     {
       name: "Mujer",
@@ -60,7 +63,10 @@ export function FeaturedCategories({ onCategoryClick }: FeaturedCategoriesProps)
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.08, ease: [0.42, 0, 0.58, 1] }}
               whileHover={{ y: -8, scale: 1.02 }}
-              onClick={() => onCategoryClick(category.name)}
+              onClick={() => {
+                onCategoryClick(category.name);
+                navigate('/coleccion');
+              }}
               className="group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300"
               style={{ willChange: "transform, opacity" }}
             >

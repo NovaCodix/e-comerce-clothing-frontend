@@ -29,6 +29,7 @@
         "@radix-ui/react-toggle": "^1.1.2",
         "@radix-ui/react-toggle-group": "^1.1.2",
         "@radix-ui/react-tooltip": "^1.1.8",
+        "@supabase/supabase-js": "^2.80.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "*",
         "cmdk": "^1.1.1",
@@ -52,10 +53,15 @@
         "@types/node": "^20.10.0",
         "@types/react": "^19.2.2",
         "@vitejs/plugin-react-swc": "^3.10.2",
+        "dotenv": "^17.2.3",
+        "tsx": "^4.20.6",
         "vite": "6.3.5"
     },
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "db:setup": "tsx scripts/setup-db.ts",
+        "db:seed": "tsx scripts/seed-db.ts",
+        "db:info": "echo 'Para configurar la base de datos:' && echo '1. Crea un proyecto en https://supabase.com' && echo '2. Copia .env.example a .env.local' && echo '3. Agrega tus credenciales de Supabase' && echo '4. Ejecuta el SQL desde supabase/migrations/001_initial_schema.sql en el SQL Editor' && echo '5. Opcionalmente ejecuta supabase/migrations/002_seed_data.sql para datos de prueba'"
     }
 }

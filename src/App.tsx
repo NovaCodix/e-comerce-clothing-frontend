@@ -21,6 +21,7 @@ import { Product } from "./components/ProductCard";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./components/ui/sheet";
 import { toast, Toaster } from "sonner";
+import { AuthProvider } from "./contexts/AuthContext";
 
 // Mock products data
 const mockProducts: Product[] = [
@@ -171,6 +172,14 @@ const mockProducts: Product[] = [
 ];
 
 export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
   const [darkMode, setDarkMode] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);

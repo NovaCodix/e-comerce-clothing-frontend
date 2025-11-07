@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { PromoBar } from "./components/PromoBar";
 import { Header } from "./components/Header";
 import { Home } from "./pages/Home";
@@ -22,6 +22,9 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./components/ui/sheet";
 import { toast, Toaster } from "sonner";
 import { AuthProvider } from "./contexts/AuthContext";
+import { useCart } from "./lib/supabase/hooks/useCart";
+import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 
 // Mock products data
 const mockProducts: Product[] = [
@@ -182,7 +185,7 @@ export default function App() {
 function AppContent() {
   const [darkMode, setDarkMode] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Todos");
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const { cartItems, addToCart, updateQuantity, removeItem } = useCart(mockProducts);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -241,26 +244,10 @@ function AppContent() {
     }
   }, [darkMode]);
 
-  const handleAddToCart = (product: Product, size?: string) => {
-    const selectedSize = size || product.sizes[0];
-    const existingItem = cartItems.find(
-      (item) => item.id === product.id && item.selectedSize === selectedSize
-    );
-
-    if (existingItem) {
-      setCartItems(
-        cartItems.map((item) =>
-          item.id === product.id && item.selectedSize === selectedSize
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
-      );
-    } else {
-      setCartItems([...cartItems, { ...product, quantity: 1, selectedSize }]);
-    }
-
+  const handleAddToCart = async (product: Product, size?: string) => {
+    await addToCart(product, size);
     toast.success(`${product.name} agregado al carrito`, {
-      description: `Talla: ${selectedSize}`,
+      description: `Talla: ${size || product.sizes[0]}`,
     });
   };
 
@@ -276,18 +263,12 @@ function AppContent() {
     }
   };
 
-  const handleUpdateQuantity = (id: number, quantity: number) => {
-    if (quantity === 0) {
-      setCartItems(cartItems.filter((item) => item.id !== id));
-    } else {
-      setCartItems(
-        cartItems.map((item) => (item.id === id ? { ...item, quantity } : item))
-      );
-    }
+  const handleUpdateQuantity = async (id: number, quantity: number) => {
+    await updateQuantity(id, quantity);
   };
 
-  const handleRemoveItem = (id: number) => {
-    setCartItems(cartItems.filter((item) => item.id !== id));
+  const handleRemoveItem = async (id: number) => {
+    await removeItem(id);
     toast.success("Producto eliminado del carrito");
   };
 
@@ -376,6 +357,16 @@ function AppContent() {
             path="/seguimiento"
             element={<OrderTrackerPage orders={ordersForTracker} onAddToCart={handleAddToCartByName} />}
           />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedAdminRoute>
+                <AdminDashboard />
+              </ProtectedAdminRoute>
+            }
+          />
+          {/* Catch all - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
   {/* Small spacer so page content (product cards) never sit flush against the Footer */}
@@ -415,6 +406,11 @@ function AppContent() {
         onClose={() => setIsCheckoutOpen(false)}
         items={cartItems}
         total={total}
+        onAuthRequired={() => {
+          setIsCheckoutOpen(false);
+          setIsAuthOpen(true);
+          toast.error("Debes iniciar sesión para realizar el pago");
+        }}
       />
 
       <AuthModal open={isAuthOpen} onClose={() => setIsAuthOpen(false)} />

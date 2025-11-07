@@ -6,17 +6,27 @@ import { Separator } from "./ui/separator";
 import { CreditCard, Smartphone, DollarSign, Copy } from "lucide-react";
 import { useState } from "react";
 import { CartItem } from "./CartDrawer";
+import { useAuthContext } from "../contexts/AuthContext";
 
 interface CheckoutModalProps {
   open: boolean;
   onClose: () => void;
   items: CartItem[];
   total: number;
+  onAuthRequired: () => void;
 }
 
-export function CheckoutModal({ open, onClose, items, total }: CheckoutModalProps) {
+export function CheckoutModal({ open, onClose, items, total, onAuthRequired }: CheckoutModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<"yape" | "account">("yape");
   const [discountCode, setDiscountCode] = useState("");
+  const { user } = useAuthContext();
+
+  // Verificar si el usuario está autenticado cuando se abre el modal
+  if (open && !user) {
+    onAuthRequired();
+    onClose();
+    return null;
+  }
 
   const storeAccount = {
     bank: "BCP",

@@ -1,4 +1,4 @@
-import { ShoppingCart, Heart, User, Menu, Moon, Sun, Package } from "lucide-react";
+import { ShoppingCart, Heart, Menu, Moon, Sun, Settings } from "lucide-react";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "./ui/sheet";
 import { Badge } from "./ui/badge";
@@ -7,6 +7,11 @@ import { Product } from "./ProductCard";
 import { motion } from "motion/react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+// User menu and auth UI are temporarily disabled for guest-first flow
+// import { UserMenu } from "./UserMenu";
+// import { UserAccountModal } from "./UserAccountModal";
+// import { useAuthContext } from "../contexts/AuthContext";
+// import { useAdmin } from "../lib/supabase/hooks/useAdmin";
 
 interface HeaderProps {
   onCartClick: () => void;
@@ -39,10 +44,23 @@ export function Header({
 }: HeaderProps) {
   const categories = ["Todos", "Mujer", "Hombre", "Niños", "Accesorios", "Ofertas"];
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  // Auth context disabled for guest-first flow
+  // const { user, signOut } = useAuthContext();
+  // const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const location = useLocation();
   const headerRef = useRef<HTMLElement | null>(null);
   const spacerRef = useRef<HTMLDivElement | null>(null);
+
+  // Auth-related modal handling disabled for now
+  /*
+  useEffect(() => {
+    if (!user) {
+      setShowAccountModal(false);
+    }
+  }, [user]);
+  */
 
   // Keep the spacer height in sync with the actual header height (covers promo + nav rows)
   useEffect(() => {
@@ -73,6 +91,14 @@ export function Header({
   const handleActionClick = (action: () => void) => {
     action();
     setMobileMenuOpen(false);
+  };
+
+  const handleUserAccountClick = () => {
+    setShowAccountModal(true);
+  };
+
+  const handleAuthModalClick = () => {
+    onAuthClick();
   };
 
   return (
@@ -106,22 +132,7 @@ export function Header({
 
           {/* Icons */}
           <div className="flex items-center gap-2">
-            {/* Order Tracking */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative rounded-full hover:bg-accent hidden sm:flex"
-              onClick={() => navigate('/seguimiento')}
-              title="Seguimiento de pedidos"
-            >
-              <motion.div
-                whileHover={{ rotate: 10, scale: 1.1 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Package className="w-5 h-5" />
-              </motion.div>
-            </Button>
-            
+            {/* Order tracking temporarily removed for guest-first flow */}
             <Button
               variant="ghost"
               size="icon"
@@ -148,14 +159,8 @@ export function Header({
                 </Badge>
               )}
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full hover:bg-accent hidden sm:flex"
-              onClick={onAuthClick}
-            >
-              <User className="w-5 h-5" />
-            </Button>
+            
+            {/* User menu temporarily disabled (no login icon) */}
             
             {/* Dark mode toggle */}
             <Button
@@ -220,28 +225,12 @@ export function Header({
                       </div>
                     </div>
 
-                    {/* User Actions */}
+                    {/* Acciones simplificadas: Favoritos y tema (sin auth ni seguimiento) */}
                     <div className="space-y-2">
                       <h3 className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
-                        Mi cuenta
+                        Acciones
                       </h3>
                       <div className="space-y-2">
-                        <Button 
-                          variant="outline" 
-                          className="w-full justify-start h-12 rounded-xl border-border hover:bg-accent/50" 
-                          onClick={() => handleActionClick(onAuthClick)}
-                        >
-                          <User className="w-5 h-5 mr-3" />
-                          <span>Mi Cuenta</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="w-full justify-start h-12 rounded-xl border-border hover:bg-accent/50" 
-                          onClick={() => { navigate('/seguimiento'); setMobileMenuOpen(false); }}
-                        >
-                          <Package className="w-5 h-5 mr-3" />
-                          <span>Mis Pedidos</span>
-                        </Button>
                         <Button 
                           variant="outline" 
                           className="w-full justify-start h-12 rounded-xl border-border hover:bg-accent/50 relative" 
@@ -255,6 +244,7 @@ export function Header({
                             </Badge>
                           )}
                         </Button>
+
                         <Button 
                           variant="outline" 
                           className="w-full justify-start h-12 rounded-xl border-border hover:bg-accent/50" 
@@ -339,6 +329,8 @@ export function Header({
       We set its height dynamically in JS to match the header's real height
       (covers promo + nav rows). */}
     <div aria-hidden="true" className="header-spacer" ref={spacerRef} />
+    
+    {/* User account modal disabled for now */}
     </>
   );
 }

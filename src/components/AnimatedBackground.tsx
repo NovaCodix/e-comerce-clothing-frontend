@@ -12,7 +12,7 @@ const generateSnowflakes = (count: number) => {
     delay: Math.random() * 8,
     duration: 18 + Math.random() * 8,
     size: 2 + Math.random() * 3,
-    opacity: 0.15 + Math.random() * 0.25,
+    opacity: 0.15 + Math.random() * 0.25, 
   }));
 };
 

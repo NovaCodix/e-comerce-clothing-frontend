@@ -5,7 +5,7 @@ import { Label } from "./ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Separator } from "./ui/separator";
 import { Mail, Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../lib/supabase/hooks/useAuth";
 import { Alert, AlertDescription } from "./ui/alert";
 
@@ -15,7 +15,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ open, onClose }: AuthModalProps) {
-  const { signIn, signUp, signInWithGoogle, loading, error } = useAuth();
+  const { signIn, signUp, signInWithGoogle, loading, error, user } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -31,6 +31,15 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
     password: "",
     confirmPassword: ""
   });
+
+  // Cerrar el modal si el usuario se autentica
+  useEffect(() => {
+    if (user && open) {
+      setTimeout(() => {
+        onClose();
+      }, 1000);
+    }
+  }, [user, open, onClose]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,6 +121,16 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-[95vw] p-0 bg-transparent">
+        <DialogHeader className="sr-only">
+          <DialogTitle>
+            {mode === 'login' ? 'Iniciar Sesión' : 'Registrarse'}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === 'login' 
+              ? 'Ingresa tus credenciales para acceder a tu cuenta' 
+              : 'Crea una nueva cuenta para comenzar a comprar'}
+          </DialogDescription>
+        </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 bg-white rounded-xl overflow-hidden shadow-2xl text-gray-900">
           {/* Left - form */}
           <div className="p-6 md:p-10">

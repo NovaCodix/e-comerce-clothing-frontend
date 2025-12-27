@@ -6,17 +6,24 @@ import { Separator } from "./ui/separator";
 import { CreditCard, Smartphone, DollarSign, Copy } from "lucide-react";
 import { useState } from "react";
 import { CartItem } from "./CartDrawer";
+import { useAuthContext } from "../contexts/AuthContext";
 
 interface CheckoutModalProps {
   open: boolean;
   onClose: () => void;
   items: CartItem[];
   total: number;
+  onAuthRequired: () => void;
 }
 
-export function CheckoutModal({ open, onClose, items, total }: CheckoutModalProps) {
+export function CheckoutModal({ open, onClose, items, total, onAuthRequired }: CheckoutModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<"yape" | "account">("yape");
   const [discountCode, setDiscountCode] = useState("");
+  // Guest checkout: do not require authentication for now
+  // const { user } = useAuthContext();
+  // Antes: si el modal se abría sin usuario, se redirigía al flujo de auth.
+  // Para la primera versión permitimos pagar sin iniciar sesión, por lo que
+  // esta verificación queda deshabilitada temporalmente.
 
   const storeAccount = {
     bank: "BCP",

@@ -8,17 +8,12 @@ interface Props {
 
 export function OrderTrackerPage({ orders, onAddToCart }: Props) {
   return (
-    // increase top padding so the title is visually separated from the fixed header
-    <div className="min-h-screen bg-background/50 pt-12 pb-8">
-      <div className="max-w-7xl mx-auto px-8">
-        {/* Adding margin-top for space above the title */}
-        <div className="mt-8"> {/* Aumento el margen superior */}
-          <h1 className="text-2xl font-semibold mb-2">Seguimiento de Pedido</h1>
-          <p className="text-foreground/70 mb-6">Revisa el estado y ubicación de tus pedidos pasados y actuales</p>
-        </div>
-
-        <div className="bg-background/80 p-8 rounded-2xl shadow-sm">
-          <OrderTrackerContent orders={orders} onAddToCart={onAddToCart} />
+    <div className="min-h-screen bg-background/50 pt-12 pb-8 flex items-start">
+      <div className="max-w-3xl mx-auto px-8 py-12">
+        <h1 className="text-2xl font-semibold mb-4">Seguimiento de Pedidos (deshabilitado)</h1>
+        <p className="mb-6">Por ahora el seguimiento de pedidos está desactivado en esta primera versión. Pronto habilitaremos historial y rastreo cuando los usuarios puedan crear cuentas.</p>
+        <div className="bg-background/80 p-6 rounded-2xl shadow-sm">
+          <p className="text-foreground/70">Si necesitas asistencia con un pedido, contáctanos por WhatsApp o correo.</p>
         </div>
       </div>
     </div>

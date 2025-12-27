@@ -93,6 +93,60 @@ export function useAuth() {
       return { data: null, error };
     }
 
+    // TEMPORALMENTE DESACTIVADO: Validación de is_active
+    // Esta validación se activará después de ejecutar la migración 003_admin_system.sql
+    /*
+    if (data.user) {
+      try {
+        const { data: profile, error: profileError } = await (supabase as any)
+          .from('profiles')
+          .select('is_active')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          if (profileError.code === '42703' || profileError.message?.includes('column') || profileError.message?.includes('does not exist')) {
+            console.warn('⚠️ Columna is_active no encontrada. Ejecuta la migración 003_admin_system.sql');
+          } else if (!profile?.is_active) {
+            await supabase.auth.signOut();
+            const inactiveError = {
+              message: 'Tu cuenta ha sido desactivada. Contacta al administrador.',
+              status: 403,
+              name: 'InactiveUserError'
+            } as AuthError;
+            
+            setState({
+              user: null,
+              session: null,
+              loading: false,
+              error: inactiveError,
+            });
+            
+            return { data: null, error: inactiveError };
+          }
+        } else if (profile && profile.is_active === false) {
+          await supabase.auth.signOut();
+          const inactiveError = {
+            message: 'Tu cuenta ha sido desactivada. Contacta al administrador.',
+            status: 403,
+            name: 'InactiveUserError'
+          } as AuthError;
+          
+          setState({
+            user: null,
+            session: null,
+            loading: false,
+            error: inactiveError,
+          });
+          
+          return { data: null, error: inactiveError };
+        }
+      } catch (err) {
+        console.warn('Error al verificar estado de usuario, permitiendo login:', err);
+      }
+    }
+    */
+
     setState({
       user: data.user,
       session: data.session,

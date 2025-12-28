@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../client';
-import type { Database } from '../types';
 
-type Product = Database['public']['Tables']['products']['Row'] & {
-  categories?: Database['public']['Tables']['categories']['Row'];
-};
+// Hook simple para productos. Intenta obtener desde `/api/products` si existe,
+// si no, devuelve array vacío. Mantiene la API original (products, loading, error).
+
+type Product = any;
 
 export function useProducts(categoryId?: string) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -15,21 +14,14 @@ export function useProducts(categoryId?: string) {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        let query = supabase
-          .from('products')
-          .select('*, categories(*)');
-
-        if (categoryId) {
-          query = query.eq('category_id', categoryId);
-        }
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-
+        const resp = await fetch('/api/products');
+        if (!resp.ok) throw new Error('No products endpoint');
+        const data = await resp.json();
         setProducts(data || []);
       } catch (err) {
+        // Si no existe endpoint, fallback a vacío (App usa mockProducts)
         setError(err as Error);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -50,25 +42,19 @@ export function useProduct(productId: string) {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('products')
-          .select('*, categories(*)')
-          .eq('id', productId)
-          .single();
-
-        if (error) throw error;
-
+        const resp = await fetch(`/api/products/${productId}`);
+        if (!resp.ok) throw new Error('No product endpoint');
+        const data = await resp.json();
         setProduct(data);
       } catch (err) {
         setError(err as Error);
+        setProduct(null);
       } finally {
         setLoading(false);
       }
     };
 
-    if (productId) {
-      fetchProduct();
-    }
+    if (productId) fetchProduct();
   }, [productId]);
 
   return { product, loading, error };

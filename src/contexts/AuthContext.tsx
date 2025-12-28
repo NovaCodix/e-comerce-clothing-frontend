@@ -1,12 +1,14 @@
 import { createContext, useContext, ReactNode } from 'react';
-import { useAuth as useSupabaseAuth } from '../lib/supabase/hooks/useAuth';
-import type { User, Session, AuthError } from '@supabase/supabase-js';
+import { useAuth as useBackendAuth } from '../lib/supabase/hooks/useAuth';
+
+// Nota: eliminadas dependencias de Supabase. Usamos un hook interno que
+// actualmente provee un cliente "sin-auth" para la primera versión sin login.
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: any | null;
+  session: any | null;
   loading: boolean;
-  error: AuthError | null;
+  error: any | null;
   signUp: (email: string, password: string, fullName?: string) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
   signOut: () => Promise<any>;
@@ -18,7 +20,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const auth = useSupabaseAuth();
+  const auth = useBackendAuth();
 
   return (
     <AuthContext.Provider value={auth}>

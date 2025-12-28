@@ -1,0 +1,116 @@
+// 1. CONFIGURACIÓN
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------
+// 2. EL CATÁLOGO (Ropa y Categorías)
+// --------------------------------------
+
+// Categorías: Mujer, Hombre, Niños, Accesorios...
+model Category {
+  id          String    @id @default(uuid())
+  name        String    // Ej: "Mujer"
+  slug        String    @unique // Ej: "mujer" (para la URL bonita)
+  description String?
+  products    Product[] // Relación: Una categoría tiene mucha ropa
+  createdAt   DateTime  @default(now())
+}
+
+// El Producto "Padre" (La ficha técnica)
+model Product {
+  id            String   @id @default(uuid())
+  name          String   // Ej: "Vestido Elegante Lavanda"
+  slug          String   @unique // Ej: "vestido-elegante-lavanda"
+  description   String   // Materiales, cuidados, etc.
+  basePrice     Decimal  @db.Decimal(10, 2) // Precio regular (120.00)
+  discountPrice Decimal? @db.Decimal(10, 2) // Precio oferta (89.99) - Opcional
+
+  // --- TUS INTERRUPTORES DE VISUALIZACIÓN (Para la Landing Page) ---
+  isTrending    Boolean  @default(false) // ¿Sale en "Tendencias"?
+  isNewArrival  Boolean  @default(true)  // ¿Sale en "Nuevos"?
+  isFeatured    Boolean  @default(false) // ¿Sale en banner principal?
+  
+  // Relaciones
+  category      Category @relation(fields: [categoryId], references: [id])
+  categoryId    String
+
+  images        ProductImage[]   // Las fotos del carrusel
+  variants      ProductVariant[] // El inventario real (Tallas/Colores)
+  orderItems    OrderItem[]      // Historial de ventas de este producto
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// --------------------------------------
+// 3. EL INVENTARIO REAL (Variantes)
+// --------------------------------------
+
+// Aquí controlas el stock exacto por combinación
+model ProductVariant {
+  id        String  @id @default(uuid())
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+
+  size      String  // Ej: "XS", "M", "42"
+  color     String  // Ej: "Lavanda", "#E6E6FA" (Nombre o Hex)
+  stock     Int     // Ej: 5 (Solo quedan 5 de ESTA talla y color)
+  sku       String? @unique // Código de almacén (opcional pero recomendado)
+}
+
+// --------------------------------------
+// 4. LAS IMÁGENES
+// --------------------------------------
+
+model ProductImage {
+  id        String  @id @default(uuid())
+  url       String  // El LINK que te da Cloudinary o tu carpeta local
+  altText   String? // Para accesibilidad (SEO)
+  isMain    Boolean @default(false) // true = Foto de portada, false = Foto del carrusel
+  
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+}
+
+// --------------------------------------
+// 5. VENTAS (Pedidos)
+// --------------------------------------
+
+// La cabecera del pedido
+model Order {
+  id              String      @id @default(uuid())
+  total           Decimal     @db.Decimal(10, 2)
+  status          String      @default("PENDING") // PENDING, PAID, SHIPPED, DELIVERED
+  
+  // Datos del cliente (aunque no haya login, guardamos quién compró)
+  customerName    String
+  customerEmail   String
+  shippingAddress String      // Puede ser un JSON stringifcado o texto simple
+  
+  items           OrderItem[] 
+  createdAt       DateTime    @default(now())
+}
+
+// El detalle (Qué compró exactamente)
+model OrderItem {
+  id        String  @id @default(uuid())
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   String
+  
+  // Relación con el producto (para saber qué fue)
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+
+  // GUARDAMOS LA FOTO DEL MOMENTO (Importante en ropa)
+  // No confiamos solo en la relación, guardamos el texto por si borras la variante mañana.
+  quantity  Int
+  size      String  // "M"
+  color     String  // "Rojo"
+  price     Decimal @db.Decimal(10, 2) // Precio al que LO COMPRÓ (por si luego sube)
+}

@@ -1,17 +1,33 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+// Cliente no-op para reemplazar Supabase y evitar la dependencia en el frontend.
+// Provee la mínima API usada por la app y devuelve valores seguros.
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+type SupabaseResult = { data: any; error: any };
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Faltan las variables de entorno de Supabase. Asegúrate de configurar VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en tu archivo .env.local');
+function builder() {
+  const obj: any = {};
+  const chainable = [
+    'select', 'eq', 'order', 'limit', 'single', 'maybeSingle', 'insert', 'update', 'delete', 'match', 'range'
+  ];
+  chainable.forEach((k) => {
+    obj[k] = () => obj;
+  });
+  obj.then = (resolve: any) => {
+    const res: SupabaseResult = { data: null, error: null };
+    resolve(res);
+    return Promise.resolve(res);
+  };
+  obj.catch = () => obj;
+  return obj;
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+const safeClient = {
+  from: (_: string) => builder(),
+  rpc: async () => ({ data: null, error: null }),
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-});
+    getSession: async () => ({ data: { session: null }, error: null }),
+    signIn: async () => ({ data: null, error: null }),
+    signOut: async () => ({ error: null }),
+  },
+} as any;
+
+export default safeClient;

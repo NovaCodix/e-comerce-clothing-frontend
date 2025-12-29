@@ -5,7 +5,7 @@ import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 export interface Product {
-  id: number;
+  id: string | number;
   name: string;
   price: number;
   originalPrice?: number;
@@ -15,6 +15,9 @@ export interface Product {
   colors: string[];
   isNew?: boolean;
   isSale?: boolean;
+  materialInfo: string,
+  shippingInfo: string,
+  description: string,
 }
 
 interface ProductCardProps {
@@ -78,7 +81,12 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
           whileTap={{ scale: 0.9 }}
           onClick={(e) => {
             e.stopPropagation();
-            onToggleFavorite?.(product.id);
+            if (onToggleFavorite) {
+              const idNum = typeof product.id === 'string' ? parseInt(product.id, 10) : product.id;
+              if (!isNaN(idNum)) {
+                onToggleFavorite(idNum);
+              }
+            }
           }}
           className={`absolute top-3 right-3 w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center transition-all ${
             isFavorite 
@@ -95,7 +103,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
           <Button
             size="sm"
             className="w-full bg-white text-[#2a2a2a] hover:bg-white/90 rounded-full"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
               e.stopPropagation();
               onAddToCart(product);
             }}

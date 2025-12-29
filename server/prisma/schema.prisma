@@ -25,27 +25,31 @@ model Category {
 // El Producto "Padre" (La ficha técnica)
 model Product {
   id            String   @id @default(uuid())
-  name          String   // Ej: "Vestido Elegante Lavanda"
-  slug          String   @unique // Ej: "vestido-elegante-lavanda"
-  description   String   // Materiales, cuidados, etc.
-  basePrice     Decimal  @db.Decimal(10, 2) // Precio regular (120.00)
-  discountPrice Decimal? @db.Decimal(10, 2) // Precio oferta (89.99) - Opcional
-
-  // --- TUS INTERRUPTORES DE VISUALIZACIÓN (Para la Landing Page) ---
-  isTrending    Boolean  @default(false) // ¿Sale en "Tendencias"?
-  isNewArrival  Boolean  @default(true)  // ¿Sale en "Nuevos"?
-  isFeatured    Boolean  @default(false) // ¿Sale en banner principal?
+  name          String
+  slug          String   @unique
+  description   String
+  basePrice     Decimal  @db.Decimal(10, 2)
+  discountPrice Decimal? @db.Decimal(10, 2)
   
-  // Relaciones
+  // --- NUEVOS CAMPOS DE DETALLE ---
+  materialInfo  String?  @db.Text // Para "Materiales y Cuidado"
+  shippingInfo  String?  @db.Text // Para "Envío y Devoluciones" (Opcional)
+  
+  // ... resto de campos (isTrending, category, images, etc.)
+  isTrending    Boolean  @default(false)
+  isNewArrival  Boolean  @default(true)
+  isFeatured    Boolean  @default(false)
+  
   category      Category @relation(fields: [categoryId], references: [id])
   categoryId    String
 
-  images        ProductImage[]   // Las fotos del carrusel
-  variants      ProductVariant[] // El inventario real (Tallas/Colores)
-  orderItems    OrderItem[]      // Historial de ventas de este producto
+  images        ProductImage[]
+  variants      ProductVariant[]
+  orderItems    OrderItem[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  
 }
 
 // --------------------------------------

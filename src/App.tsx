@@ -23,156 +23,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { toast, Toaster } from "sonner";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useCart } from "./lib/supabase/hooks/useCart";
-import AdminDashboard from "./pages/AdminDashboard";
+// import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
-
-// Mock products data
-const mockProducts: Product[] = [
-  {
-    id: 1,
-    name: "Vestido Elegante Lavanda",
-    price: 89.99,
-    originalPrice: 120.00,
-    image: "https://images.unsplash.com/photo-1751399566412-ad1194241c5c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHN0eWxpc2glMjBvdXRmaXR8ZW58MXx8fHwxNzYxMDg0OTk0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    category: "Vestidos",
-    sizes: ["XS", "S", "M", "L", "XL"],
-    colors: ["#d4c5e2", "#ffffff", "#2a2a2a"],
-    isNew: true,
-    isSale: true,
-  },
-  {
-    id: 2,
-    name: "Chaqueta Casual Beige",
-    price: 129.99,
-    image: "https://images.unsplash.com/photo-1637641185564-9edb317d6f65?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGVnYW50JTIwamFja2V0fGVufDF8fHx8MTc2MTA4NDk5M3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    category: "Chaquetas",
-    sizes: ["S", "M", "L", "XL"],
-    colors: ["#f5ebe0", "#e5e5e5", "#2a2a2a"],
-    isNew: true,
-  },
-  {
-    id: 3,
-    name: "Conjunto Deportivo Menta",
-    price: 69.99,
-    originalPrice: 95.00,
-    image: "https://images.unsplash.com/photo-1617724748068-691efeeaf542?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW4lMjBjYXN1YWwlMjB3ZWFyfGVufDF8fHx8MTc2MTAyMDQyNnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    category: "Pantalones",
-    sizes: ["M", "L", "XL", "XXL"],
-    colors: ["#a8d5ba", "#ffffff", "#e5e5e5"],
-    isSale: true,
-  },
-  {
-    id: 4,
-    name: "Vestido Casual Rosa",
-    price: 79.99,
-    image: "https://images.unsplash.com/photo-1610170124794-1fce414c7bef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXN1YWwlMjBkcmVzc3xlbnwxfHx8fDE3NjEwMDgxMDF8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    category: "Vestidos",
-    sizes: ["XS", "S", "M", "L"],
-    colors: ["#f4b8c4", "#ffffff", "#d4c5e2"],
-    isNew: true,
-  },
-  {
-    id: 5,
-    name: "Accesorios Premium",
-    price: 49.99,
-    image: "https://images.unsplash.com/photo-1569388330292-79cc1ec67270?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwYWNjZXNzb3JpZXN8ZW58MXx8fHwxNzYwOTk2MDUxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    category: "Accesorios",
-    sizes: ["Único"],
-    colors: ["#f5ebe0", "#2a2a2a", "#b8a89a"],
-  },
-  {
-    id: 6,
-    name: "Suéter Moderno",
-    price: 99.99,
-    originalPrice: 140.00,
-    image: "https://images.unsplash.com/photo-1608975321561-176c1b187d24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwc3dlYXRlcnxlbnwxfHx8fDE3NjEwODQ5OTR8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    category: "Blusas",
-    sizes: ["S", "M", "L", "XL"],
-    colors: ["#e5e5e5", "#ffffff", "#d4c5e2", "#f5ebe0"],
-    isSale: true,
-  },
-  {
-    id: 7,
-    name: "Zapatillas Minimalistas",
-    price: 119.99,
-    image: "https://images.unsplash.com/photo-1722005924485-40c91abb67f9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaW5pbWFsJTIwc2hvZXN8ZW58MXx8fHwxNzYxMDg0OTkzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    category: "Accesorios",
-    sizes: ["36", "37", "38", "39", "40", "41"],
-    colors: ["#ffffff", "#e5e5e5", "#2a2a2a"],
-    isNew: true,
-  },
-  {
-    id: 8,
-    name: "Blusa Elegante Beige",
-    price: 59.99,
-    image: "https://images.unsplash.com/photo-1620777888789-0ee95b57a277?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwbW9kZWwlMjBjbG90aGluZ3xlbnwxfHx8fDE3NjA5Nzk2OTB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-    category: "Blusas",
-    sizes: ["XS", "S", "M", "L", "XL"],
-    colors: ["#f5ebe0", "#ffffff", "#d4c5e2"],
-  },
-  // Productos para Niños
-  {
-    id: 9,
-    name: "Conjunto Infantil Colorido",
-    price: 45.99,
-    originalPrice: 65.00,
-    image: "https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=800&q=80",
-    category: "Niños",
-    sizes: ["2-3", "4-5", "6-7", "8-9"],
-    colors: ["#a8d5ba", "#f4b8c4", "#d4c5e2"],
-    isNew: true,
-    isSale: true,
-  },
-  {
-    id: 10,
-    name: "Vestido Infantil Lavanda",
-    price: 39.99,
-    image: "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=800&q=80",
-    category: "Niños",
-    sizes: ["2-3", "4-5", "6-7", "8-9", "10-11"],
-    colors: ["#d4c5e2", "#f4b8c4", "#ffffff"],
-    isNew: true,
-  },
-  {
-    id: 11,
-    name: "Pantalón Cómodo Niños",
-    price: 35.99,
-    image: "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=800&q=80",
-    category: "Niños",
-    sizes: ["2-3", "4-5", "6-7", "8-9", "10-11"],
-    colors: ["#2a2a2a", "#e5e5e5", "#a8d5ba"],
-  },
-  {
-    id: 12,
-    name: "Sudadera Infantil Suave",
-    price: 42.99,
-    originalPrice: 60.00,
-    image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=800&q=80",
-    category: "Niños",
-    sizes: ["2-3", "4-5", "6-7", "8-9"],
-    colors: ["#f4b8c4", "#a8d5ba", "#e5e5e5"],
-    isSale: true,
-  },
-  {
-    id: 13,
-    name: "Conjunto Deportivo Niños",
-    price: 48.99,
-    image: "https://images.unsplash.com/photo-1514090458221-65cd6449d0ca?w=800&q=80",
-    category: "Niños",
-    sizes: ["2-3", "4-5", "6-7", "8-9", "10-11"],
-    colors: ["#a8d5ba", "#2a2a2a", "#ffffff"],
-    isNew: true,
-  },
-  {
-    id: 14,
-    name: "Chaqueta Acolchada Niños",
-    price: 52.99,
-    image: "https://images.unsplash.com/photo-1514090458221-65cd6449d0ca?w=800&q=80",
-    category: "Niños",
-    sizes: ["4-5", "6-7", "8-9", "10-11"],
-    colors: ["#2a2a2a", "#e5e5e5", "#a8d5ba"],
-  },
-];
+import CreateProduct from './pages/CreateProduct';
 
 export default function App() {
   return (
@@ -185,19 +38,58 @@ export default function App() {
 function AppContent() {
   const [darkMode, setDarkMode] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Todos");
-  const { cartItems, addToCart, updateQuantity, removeItem } = useCart(mockProducts);
+  
+  // ESTADO PARA PRODUCTOS REALES DE LA BASE DE DATOS
+  const [products, setProducts] = useState<Product[]>([]); 
+  const [loading, setLoading] = useState(true);
+
+  // 1. AQUI ESTABA EL ERROR: Ahora usamos 'products' en lugar de 'mockProducts'
+  const { cartItems, addToCart, updateQuantity, removeItem } = useCart(products);
+  
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  // Order tracker modal removed for initial guest flow
+  
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isSpringCollectionOpen, setIsSpringCollectionOpen] = useState(false);
   const [isAccessoriesCollectionOpen, setIsAccessoriesCollectionOpen] = useState(false);
 
-  // Mock order for demonstration
+  // CARGAR DATOS DE LA BASE DE DATOS
+  useEffect(() => {
+    fetch('http://localhost:4000/api/products')
+      .then(res => res.json())
+      .then((data) => {
+        // TRANSFORMACIÓN: Convertir formato Base de Datos -> Formato Frontend
+        const mappedProducts: Product[] = data.map((dbItem: any) => ({
+          id: dbItem.id, // Ahora es un UUID (string)
+          name: dbItem.name,
+          price: Number(dbItem.basePrice), // Asegurar que sea número
+          originalPrice: dbItem.discountPrice ? Number(dbItem.basePrice) : undefined,
+          // Si tiene imágenes, usa la primera, si no, una por defecto
+          image: dbItem.images.length > 0 ? dbItem.images[0].url : 'https://via.placeholder.com/300',
+          category: dbItem.category?.name || 'General',
+          // Mapeamos las variantes para sacar tallas y colores únicos
+          sizes: [...new Set(dbItem.variants.map((v: any) => v.size))],
+          colors: [...new Set(dbItem.variants.map((v: any) => v.color))],
+          isNew: dbItem.isNewArrival,
+          isSale: dbItem.discountPrice !== null,
+          materialInfo: dbItem.materialInfo,
+          shippingInfo: dbItem.shippingInfo,
+        }));
+
+        setProducts(mappedProducts);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error conectando al servidor:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  // Mock order for demonstration (Esto se queda igual porque es demo)
   const [currentOrder] = useState<Order>({
     id: "1",
     orderNumber: "EST-2024-00123",
@@ -217,7 +109,6 @@ function AppContent() {
     ],
   });
 
-  // Additional past order for the tracker demo
   const pastOrder: Order = {
     id: "2",
     orderNumber: "PO-159-00737",
@@ -235,7 +126,6 @@ function AppContent() {
 
   const ordersForTracker: Order[] = [currentOrder, pastOrder];
 
-  // Apply dark mode
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -247,16 +137,15 @@ function AppContent() {
   const handleAddToCart = async (product: Product, size?: string) => {
     await addToCart(product, size);
     toast.success(`${product.name} agregado al carrito`, {
-      description: `Talla: ${size || product.sizes[0]}`,
+      description: `Talla: ${size || product.sizes[0] || 'Única'}`,
     });
   };
 
-  // helper used by OrderTracker page to add items by product name
+  // 2. CORREGIDO: Usar 'products' en lugar de 'mockProducts'
   const handleAddToCartByName = (productName: string) => {
-    const found = mockProducts.find((p) => p.name === productName);
+    const found = products.find((p) => p.name === productName);
     if (found) {
       handleAddToCart(found);
-      // open cart drawer so user sees the items
       setIsCartOpen(true);
     } else {
       toast.error(`Producto '${productName}' no encontrado en catálogo`);
@@ -299,6 +188,10 @@ function AppContent() {
   const tax = cartTotal * 0.1;
   const total = cartTotal + shipping + tax;
 
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Cargando tienda...</div>;
+  }
+
   return (
     <Router>
       <Toaster position="top-center" richColors />
@@ -312,25 +205,24 @@ function AppContent() {
           onCartClick={() => setIsCartOpen(true)}
           onAuthClick={() => setIsAuthOpen(true)}
           onFavoritesClick={() => setIsFavoritesOpen(true)}
-          // provide noop to satisfy HeaderProps (tracking hidden in guest flow)
           onOrderTrackingClick={() => {}}
           cartItemCount={cartItems.length}
           favoriteCount={favoriteIds.length}
           darkMode={darkMode}
           onDarkModeToggle={() => setDarkMode(!darkMode)}
-          products={mockProducts}
+          products={products} // 3. CORREGIDO: Pasar 'products'
           onSelectProduct={setSelectedProduct}
           onCategorySelect={handleCategorySelect}
           selectedCategory={selectedCategory}
         />
 
-  <ScrollToTop />
-  <Routes>
+        <ScrollToTop />
+        <Routes>
           <Route 
             path="/" 
             element={
               <Home
-                products={mockProducts}
+                products={products} // 4. CORREGIDO: Pasar 'products'
                 onCategorySelect={handleCategorySelect}
                 onAddToCart={handleAddToCart}
                 onViewDetails={setSelectedProduct}
@@ -345,7 +237,7 @@ function AppContent() {
             path="/coleccion" 
             element={
               <Collection
-                products={mockProducts}
+                products={products} // 5. CORREGIDO: Pasar 'products'
                 selectedCategory={selectedCategory}
                 onAddToCart={handleAddToCart}
                 onViewDetails={setSelectedProduct}
@@ -354,98 +246,82 @@ function AppContent() {
               />
             } 
           />
-          {/* Route /seguimiento removed (seguimiento de pedidos deshabilitado) */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedAdminRoute>
-                <AdminDashboard />
-              </ProtectedAdminRoute>
-            }
-          />
-          {/* Catch all - redirect to home */}
+          
+          <Route path="/admin/create-product" element={<CreateProduct />} />
+          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
-  {/* Small spacer so page content (product cards) never sit flush against the Footer */}
-  <div aria-hidden="true" className="h-12 md:h-20" />
-  <Footer onOpenSizeGuide={() => setIsSizeGuideOpen(true)} />
+        <div aria-hidden="true" className="h-12 md:h-20" />
+        <Footer onOpenSizeGuide={() => setIsSizeGuideOpen(true)} />
 
-      {/* Modals and drawers */}
-      <ProductDetailModal
-        product={selectedProduct}
-        open={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        onAddToCart={(product, size) => handleAddToCart(product, size)}
-        isFavorite={selectedProduct ? favoriteIds.includes(selectedProduct.id) : false}
-        onToggleFavorite={handleToggleFavorite}
-      />
+        {/* Modals and drawers */}
+        <ProductDetailModal
+          product={selectedProduct}
+          open={!!selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onAddToCart={(product, size) => handleAddToCart(product, size)}
+          isFavorite={selectedProduct ? favoriteIds.includes(Number(selectedProduct.id)) : false}
+          onToggleFavorite={handleToggleFavorite}
+        />
 
-      <CartDrawer
-        open={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        items={cartItems}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onCheckout={handleCheckout}
-      />
+        <CartDrawer
+          open={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          items={cartItems}
+          onUpdateQuantity={handleUpdateQuantity}
+          onRemoveItem={handleRemoveItem}
+          onCheckout={handleCheckout}
+        />
 
-      <FavoritesDrawer
-        open={isFavoritesOpen}
-        onClose={() => setIsFavoritesOpen(false)}
-        favorites={mockProducts.filter((p) => favoriteIds.includes(p.id))}
-        onRemoveFavorite={handleToggleFavorite}
-        onViewDetails={setSelectedProduct}
-        onAddToCart={(product) => handleAddToCart(product)}
-      />
+        <FavoritesDrawer
+          open={isFavoritesOpen}
+          onClose={() => setIsFavoritesOpen(false)}
+          // 6. CORREGIDO: Filtrar sobre 'products' y asegurar que la comparación sea por número
+          favorites={products.filter((p) => favoriteIds.includes(Number(p.id)))}
+          onRemoveFavorite={handleToggleFavorite}
+          onViewDetails={setSelectedProduct}
+          onAddToCart={(product) => handleAddToCart(product)}
+        />
 
-      <CheckoutModal
-        open={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        items={cartItems}
-        total={total}
-        onAuthRequired={() => {
-          setIsCheckoutOpen(false);
-          setIsAuthOpen(true);
-          toast.error("Debes iniciar sesión para realizar el pago");
-        }}
-      />
+        <CheckoutModal
+          open={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          items={cartItems}
+          total={total}
+          onAuthRequired={() => {
+            setIsCheckoutOpen(false);
+            setIsAuthOpen(true);
+            toast.error("Debes iniciar sesión para realizar el pago");
+          }}
+        />
 
-      <AuthModal open={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+        <AuthModal open={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
-      {/* OrderTracker modal removed for guest-first flow */}
+        <SizeGuide
+          open={isSizeGuideOpen}
+          onClose={() => setIsSizeGuideOpen(false)}
+        />
 
-      <SizeGuide
-        open={isSizeGuideOpen}
-        onClose={() => setIsSizeGuideOpen(false)}
-      />
+        <SpringCollection
+          open={isSpringCollectionOpen}
+          onClose={() => setIsSpringCollectionOpen(false)}
+          products={products} // 7. CORREGIDO: Pasar 'products'
+          onAddToCart={handleAddToCart}
+          onToggleFavorite={handleToggleFavorite}
+          favoriteIds={favoriteIds}
+        />
 
-      <SpringCollection
-        open={isSpringCollectionOpen}
-        onClose={() => {
-          console.log('Closing Spring Collection Modal');
-          setIsSpringCollectionOpen(false);
-        }}
-        products={mockProducts}
-        onAddToCart={handleAddToCart}
-        onToggleFavorite={handleToggleFavorite}
-        favoriteIds={favoriteIds}
-      />
+        <AccessoriesCollection
+          open={isAccessoriesCollectionOpen}
+          onClose={() => setIsAccessoriesCollectionOpen(false)}
+          products={products} // 8. CORREGIDO: Pasar 'products'
+          onAddToCart={handleAddToCart}
+          onToggleFavorite={handleToggleFavorite}
+          favoriteIds={favoriteIds}
+        />
 
-      <AccessoriesCollection
-        open={isAccessoriesCollectionOpen}
-        onClose={() => {
-          console.log('Closing Accessories Collection Modal');
-          setIsAccessoriesCollectionOpen(false);
-        }}
-        products={mockProducts}
-        onAddToCart={handleAddToCart}
-        onToggleFavorite={handleToggleFavorite}
-        favoriteIds={favoriteIds}
-      />
-
-      {/* WhatsApp Floating Button - Always visible */}
-      <WhatsAppButton />
+        <WhatsAppButton />
       </div>
     </Router>
   );

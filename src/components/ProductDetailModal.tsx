@@ -36,7 +36,7 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
 
   if (!product) return null;
 
-  // Mock images for different angles
+  // Mock images for different angles (Si tu backend devuelve array de fotos en el futuro, esto se actualizará)
   const productImages = [
     { src: product.image, label: "Vista frontal" },
     { src: product.image, label: "Vista lateral" },
@@ -122,38 +122,52 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
               )}
             </div>
 
-            {/* Product description with accordion */}
+            {/* Product description with accordion - ACTUALIZADO */}
             <Accordion type="single" collapsible className="mb-6">
+              
+              {/* 1. Descripción */}
               <AccordionItem value="description">
                 <AccordionTrigger>Descripción</AccordionTrigger>
                 <AccordionContent>
-                  <p className="text-muted-foreground dark:text-[#CCCCCC] text-justify">
-                    Prenda de alta calidad confeccionada con materiales premium. Perfecta para cualquier ocasión, 
-                    combina estilo y comodidad en un diseño único y versátil. Cada detalle ha sido cuidadosamente 
-                    seleccionado para ofrecerte la mejor experiencia de uso.
+                  <p className="text-muted-foreground dark:text-[#CCCCCC] text-justify whitespace-pre-line">
+                    {product.description || "Sin descripción disponible."}
                   </p>
                 </AccordionContent>
               </AccordionItem>
               
+              {/* 2. Materiales y Cuidado (Dinámico) */}
               <AccordionItem value="materials">
                 <AccordionTrigger>Materiales y Cuidado</AccordionTrigger>
                 <AccordionContent>
-                  <p className="text-muted-foreground dark:text-[#CCCCCC] text-justify mb-2">
-                    • 80% Algodón orgánico, 20% Poliéster reciclado<br />
-                    • Lavar a máquina en agua fría<br />
-                    • No usar blanqueador<br />
-                    • Secar a baja temperatura
-                  </p>
+                  {product.materialInfo ? (
+                    <p className="text-muted-foreground dark:text-[#CCCCCC] text-justify whitespace-pre-line">
+                      {product.materialInfo}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground dark:text-[#CCCCCC]">
+                      No se especificaron materiales para este producto.
+                    </p>
+                  )}
                 </AccordionContent>
               </AccordionItem>
               
+              {/* 3. Envío y Devoluciones (Dinámico con Fallback) */}
               <AccordionItem value="shipping">
                 <AccordionTrigger>Envío y Devoluciones</AccordionTrigger>
                 <AccordionContent>
-                  <p className="text-muted-foreground dark:text-[#CCCCCC] text-justify">
-                    Envío gratis en compras mayores a $50. Entregas en 3-5 días hábiles. 
-                    Devoluciones gratuitas dentro de los 30 días posteriores a la compra.
-                  </p>
+                  {product.shippingInfo ? (
+                    <p className="text-muted-foreground dark:text-[#CCCCCC] text-justify whitespace-pre-line">
+                      {product.shippingInfo}
+                    </p>
+                  ) : (
+                    <div className="text-muted-foreground dark:text-[#CCCCCC] text-justify">
+                        <ul className="list-disc pl-4 space-y-1">
+                            <li>Envío gratis en compras mayores a S/. 200</li>
+                            <li>Devoluciones gratuitas en 30 días</li>
+                            <li>Pago seguro garantizado</li>
+                        </ul>
+                    </div>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -162,19 +176,23 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
             <div className="mb-6">
               <h4 className="mb-4 text-center text-foreground dark:text-[#FFFFFF]">Selecciona tu talla</h4>
               <div className="flex flex-wrap justify-center gap-3">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`min-w-[60px] py-3 px-4 rounded-lg border transition-all text-center ${
-                      selectedSize === size
-                        ? "bg-[#b8a89a] text-white border-[#b8a89a] shadow-lg shadow-[#b8a89a]/30"
-                        : "border-border hover:border-[#b8a89a] bg-background dark:bg-[#252525] text-foreground dark:text-[#FFFFFF] hover:bg-[#b8a89a]/10"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+                {product.sizes && product.sizes.length > 0 ? (
+                    product.sizes.map((size) => (
+                    <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`min-w-[60px] py-3 px-4 rounded-lg border transition-all text-center ${
+                        selectedSize === size
+                            ? "bg-[#b8a89a] text-white border-[#b8a89a] shadow-lg shadow-[#b8a89a]/30"
+                            : "border-border hover:border-[#b8a89a] bg-background dark:bg-[#252525] text-foreground dark:text-[#FFFFFF] hover:bg-[#b8a89a]/10"
+                        }`}
+                    >
+                        {size}
+                    </button>
+                    ))
+                ) : (
+                    <p className="text-sm text-muted-foreground">Talla única</p>
+                )}
               </div>
             </div>
 
@@ -182,14 +200,18 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
             <div className="mb-6">
               <h4 className="mb-3 text-center text-foreground dark:text-[#FFFFFF]">Colores disponibles</h4>
               <div className="flex justify-center gap-3">
-                {product.colors.map((color, index) => (
-                  <div
-                    key={index}
-                    className="w-10 h-10 rounded-full border-2 border-border hover:scale-110 hover:ring-2 hover:ring-[#b8a89a] hover:ring-offset-2 dark:ring-offset-[#1a1a1a] transition-all cursor-pointer"
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
-                ))}
+                {product.colors && product.colors.length > 0 ? (
+                     product.colors.map((color, index) => (
+                    <div
+                        key={index}
+                        className="w-10 h-10 rounded-full border-2 border-border hover:scale-110 hover:ring-2 hover:ring-[#b8a89a] hover:ring-offset-2 dark:ring-offset-[#1a1a1a] transition-all cursor-pointer"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                    />
+                    ))
+                ) : (
+                    <p className="text-sm text-muted-foreground">Color único</p>
+                )}
               </div>
             </div>
 
@@ -199,10 +221,10 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
                 size="lg"
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
                 onClick={handleAddToCart}
-                disabled={!selectedSize}
+                disabled={product.sizes.length > 0 && !selectedSize} // Solo deshabilita si hay tallas y no seleccionó ninguna
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                {selectedSize ? "Añadir al Carrito" : "Selecciona una talla"}
+                {product.sizes.length > 0 && !selectedSize ? "Selecciona una talla" : "Añadir al Carrito"}
               </Button>
               
               <TooltipProvider>
@@ -213,7 +235,7 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
                         variant="outline"
                         size="lg"
                         className={`rounded-full ${isFavorite ? "bg-[#f4b8c4]/10 border-[#f4b8c4] text-[#f4b8c4]" : ""}`}
-                        onClick={() => onToggleFavorite?.(product.id)}
+                        onClick={() => onToggleFavorite?.(product.id as number)}
                       >
                         <Heart className={`w-5 h-5 ${isFavorite ? "fill-[#f4b8c4]" : ""}`} />
                       </Button>
@@ -249,9 +271,9 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
               </TooltipProvider>
             </div>
 
-            {/* Additional info */}
+            {/* Additional info (Badges inferiores) */}
             <div className="mt-6 pt-6 border-t border-border space-y-3 text-muted-foreground dark:text-[#CCCCCC]">
-              <p>✓ Envío gratis en compras mayores a $50</p>
+              <p>✓ Envío gratis en compras mayores a S/. 200</p>
               <p>✓ Devoluciones gratuitas en 30 días</p>
               <p>✓ Pago seguro garantizado</p>
             </div>

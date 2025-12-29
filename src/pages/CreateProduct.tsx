@@ -7,11 +7,21 @@ import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
 
 // --- COMPONENTE 1: FORMULARIO DE CATEGORÍA ---
-function CategoryForm({ onSuccess }: { onSuccess: () => void }) {
-  const [formData, setFormData] = useState({ name: '', description: '' });
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: any) => {
+interface CategoryFormProps {
+  onSuccess: () => void;
+}
+
+interface CategoryFormState {
+  name: string;
+  description: string;
+}
+
+function CategoryForm({ onSuccess }: CategoryFormProps) {
+  const [formData, setFormData] = useState<CategoryFormState>({ name: '', description: '' });
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -56,12 +66,35 @@ function CategoryForm({ onSuccess }: { onSuccess: () => void }) {
 }
 
 // --- COMPONENTE 2: FORMULARIO DE PRODUCTO (CON FOTO) ---
-function ProductForm({ categories }: { categories: any[] }) {
+
+interface Category {
+  id: string | number;
+  name: string;
+  description?: string;
+}
+
+interface ProductFormProps {
+  categories: Category[];
+}
+
+interface ProductFormState {
+  name: string;
+  description: string;
+  basePrice: string;
+  categoryId: string;
+  isTrending: boolean;
+  isNewArrival: boolean;
+  isFeatured: boolean;
+  materialInfo: string;
+  shippingInfo: string;
+}
+
+function ProductForm({ categories }: ProductFormProps) {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [file, setFile] = useState<File | null>(null); // Estado para el archivo real
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProductFormState>({
     name: '',
     description: '',
     basePrice: '',
@@ -73,23 +106,23 @@ function ProductForm({ categories }: { categories: any[] }) {
     shippingInfo: '',
   });
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleCheckbox = (checked: any, field: string) => {
+  const handleCheckbox = (checked: boolean, field: keyof ProductFormState) => {
     setFormData({ ...formData, [field]: !!checked });
   };
 
   // Manejar selección de archivo
-  const handleFileChange = (e: any) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
     }
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
@@ -197,8 +230,13 @@ function ProductForm({ categories }: { categories: any[] }) {
           <Checkbox checked={formData.isNewArrival} onCheckedChange={(c) => handleCheckbox(c, 'isNewArrival')} />
           <Label>Nuevo</Label>
         </div>
+
+        {/* Tipado explícito para Checkbox */}
         <div className="flex items-center gap-2">
-          <Checkbox checked={formData.isTrending} onCheckedChange={(c) => handleCheckbox(c, 'isTrending')} />
+          <Checkbox 
+            checked={formData.isTrending} 
+            onCheckedChange={(c: boolean | "indeterminate") => handleCheckbox(c as boolean, 'isTrending')} 
+          />
           <Label>Tendencia</Label>
         </div>
         <div className="flex items-center gap-2">
@@ -215,9 +253,12 @@ function ProductForm({ categories }: { categories: any[] }) {
 }
 
 // --- COMPONENTE PRINCIPAL (EL CONTENEDOR) ---
+
+type TabType = 'products' | 'categories';
+
 export default function AdminManager() {
-  const [activeTab, setActiveTab] = useState<'products' | 'categories'>('products');
-  const [categories, setCategories] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>('products');
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Función para recargar categorías
   const fetchCategories = () => {

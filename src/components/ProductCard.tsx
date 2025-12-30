@@ -4,20 +4,38 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
+// Definimos la estructura de la variante
+export interface ProductVariant {
+  id: string;
+  size: string;
+  color: string;
+  stock: number;
+}
+
 export interface Product {
   id: string | number;
   name: string;
   price: number;
   originalPrice?: number;
+  discountPrice?: number; // Agregado para soportar la oferta nueva
   image: string;
   category: string;
+  
+  // Listas resumen (para filtros visuales)
   sizes: string[];
   colors: string[];
+  
+  // INVENTARIO REAL (SKU)
+  variants?: ProductVariant[];
+  
   isNew?: boolean;
   isSale?: boolean;
-  materialInfo: string,
-  shippingInfo: string,
-  description: string,
+  isActive?: boolean;
+  
+  // Info extra (Opcionales para evitar errores si faltan en BD)
+  materialInfo?: string;
+  shippingInfo?: string;
+  description?: string;
 }
 
 interface ProductCardProps {
@@ -29,6 +47,19 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, onToggleFavorite }: ProductCardProps) {
+  
+  // 1. CALCULAR STOCK TOTAL
+  // Sumamos el stock de todas las variantes. Si no hay variantes (ej: datos antiguos), asumimos que hay stock (99)
+  const totalStock = product.variants 
+    ? product.variants.reduce((acc, v) => acc + v.stock, 0) 
+    : 99;
+    
+  const isOutOfStock = totalStock === 0;
+
+  // Usamos el precio de oferta si existe, si no el base
+  const displayPrice = product.discountPrice || product.price;
+  const hasDiscount = !!product.discountPrice || !!product.originalPrice;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -38,10 +69,12 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
       className="group bg-background dark:bg-[#1a1a1a] rounded-2xl overflow-hidden border border-border hover:shadow-2xl hover:border-primary/30 transition-all duration-300"
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f0ed] cursor-pointer" onClick={() => onViewDetails(product)}>
+        
+        {/* IMAGEN (Se pone gris si no hay stock) */}
         <motion.div
           whileHover={{ scale: 1.1 }}
           transition={{ duration: 0.6 }}
-          className="w-full h-full"
+          className={`w-full h-full ${isOutOfStock ? "grayscale opacity-70" : ""}`}
         >
           <ImageWithFallback
             src={product.image}
@@ -50,31 +83,38 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
           />
         </motion.div>
         
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
-          {product.isNew && (
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", delay: 0.2 }}
-            >
-              <Badge className="bg-[#a8d5ba] hover:bg-[#a8d5ba] shadow-lg">
-                ✨ Nuevo
-              </Badge>
-            </motion.div>
-          )}
-          {product.isSale && (
-            <motion.div
-              initial={{ scale: 0, rotate: 180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", delay: 0.3 }}
-            >
-              <Badge className="bg-[#f4b8c4] hover:bg-[#f4b8c4] shadow-lg">
-                🔥 Oferta
-              </Badge>
-            </motion.div>
-          )}
-        </div>
+        {/* --- OVERLAY AGOTADO --- */}
+        {isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 pointer-events-none">
+                <span className="border-2 border-white text-white px-4 py-2 font-bold uppercase tracking-widest text-lg transform -rotate-12">
+                    Agotado
+                </span>
+            </div>
+        )}
+
+        {/* Badges (Solo si hay stock) */}
+        {!isOutOfStock && (
+            <div className="absolute top-3 left-3 flex flex-col gap-2">
+            {product.isNew && (
+                <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", delay: 0.2 }}
+                >
+                <Badge className="bg-[#a8d5ba] hover:bg-[#a8d5ba] shadow-lg">✨ Nuevo</Badge>
+                </motion.div>
+            )}
+            {hasDiscount && (
+                <motion.div
+                initial={{ scale: 0, rotate: 180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", delay: 0.3 }}
+                >
+                <Badge className="bg-[#f4b8c4] hover:bg-[#f4b8c4] shadow-lg">🔥 Oferta</Badge>
+                </motion.div>
+            )}
+            </div>
+        )}
 
         {/* Favorite button */}
         <motion.button
@@ -98,30 +138,39 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
           <Heart className={`w-5 h-5 transition-all ${isFavorite ? "fill-white text-white" : ""}`} />
         </motion.button>
 
-        {/* Quick add overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="sm"
-            className="w-full bg-white text-[#2a2a2a] hover:bg-white/90 rounded-full"
-            onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-              e.stopPropagation();
-              onAddToCart(product);
-            }}
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Agregar al Carrito
-          </Button>
-        </div>
+        {/* Quick add overlay (SOLO SI HAY STOCK) */}
+        {!isOutOfStock && (
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+                size="sm"
+                className="w-full bg-white text-[#2a2a2a] hover:bg-white/90 rounded-full"
+                onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+                  e.stopPropagation();
+                  // Forzamos abrir el modal para que elija talla/color
+                  onViewDetails(product); 
+                }}
+            >
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Ver Opciones
+            </Button>
+            </div>
+        )}
       </div>
 
       <div className="p-4">
         <p className="text-muted-foreground dark:text-[#CCCCCC] mb-1">{product.category}</p>
         <h4 className="mb-2 line-clamp-1 text-foreground dark:text-[#FFFFFF]">{product.name}</h4>
+        
         <div className="flex items-center gap-2">
-          <span className="text-foreground dark:text-[#FFFFFF]">S/ {product.price.toFixed(2)}</span>
-          {product.originalPrice && (
-            <span className="text-muted-foreground dark:text-[#CCCCCC] line-through">
-              S/ {product.originalPrice.toFixed(2)}
+          {/* Precio Actual */}
+          <span className={`text-foreground dark:text-[#FFFFFF] ${hasDiscount ? "text-red-500 font-bold" : ""}`}>
+            S/ {displayPrice.toFixed(2)}
+          </span>
+          
+          {/* Precio Original Tachado (Si hay descuento) */}
+          {hasDiscount && (
+            <span className="text-muted-foreground dark:text-[#CCCCCC] line-through text-sm">
+              S/ {product.price.toFixed(2)}
             </span>
           )}
         </div>
@@ -131,11 +180,14 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
           {product.colors.slice(0, 4).map((color, index) => (
             <div
               key={index}
-              className="w-5 h-5 rounded-full border border-border"
+              className="w-5 h-5 rounded-full border border-border shadow-sm"
               style={{ backgroundColor: color }}
               title={color}
             />
           ))}
+          {product.colors.length > 4 && (
+             <span className="text-xs text-muted-foreground ml-1">+{product.colors.length - 4}</span>
+          )}
         </div>
       </div>
     </motion.div>

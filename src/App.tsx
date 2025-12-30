@@ -5,12 +5,10 @@ import { Header } from "./components/Header";
 import { Home } from "./pages/Home";
 import { Collection } from "./pages/Collection";
 import { ProductDetailModal } from "./components/ProductDetailModal";
-import { CartDrawer, CartItem } from "./components/CartDrawer";
+import { CartDrawer } from "./components/CartDrawer";
 import { FavoritesDrawer } from "./components/FavoritesDrawer";
 import { CheckoutModal } from "./components/CheckoutModal";
 import { AuthModal } from "./components/AuthModal";
-import { Order } from "./components/OrderTracker";
-import OrderTrackerPage from "./pages/OrderTrackerPage";
 import { SizeGuide } from "./components/SizeGuide";
 import { SpringCollection } from "./components/SpringCollection";
 import { AccessoriesCollection } from "./components/AccessoriesCollection";
@@ -19,12 +17,9 @@ import { Footer } from "./components/Footer";
 import { WhatsAppButton } from "./components/WhatsAppButton";
 import { Product } from "./components/ProductCard";
 import { ScrollToTop } from "./components/ScrollToTop";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./components/ui/sheet";
 import { toast, Toaster } from "sonner";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useCart } from "./lib/supabase/hooks/useCart";
-// import AdminDashboard from "./pages/AdminDashboard";
-import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import CreateProduct from './pages/CreateProduct';
 
 export default function App() {
@@ -43,7 +38,7 @@ function AppContent() {
   const [products, setProducts] = useState<Product[]>([]); 
   const [loading, setLoading] = useState(true);
 
-  // 1. AQUI ESTABA EL ERROR: Ahora usamos 'products' en lugar de 'mockProducts'
+  // Hook del carrito usando los productos reales
   const { cartItems, addToCart, updateQuantity, removeItem } = useCart(products);
   
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
@@ -64,20 +59,36 @@ function AppContent() {
       .then((data) => {
         // TRANSFORMACIÓN: Convertir formato Base de Datos -> Formato Frontend
         const mappedProducts: Product[] = data.map((dbItem: any) => ({
-          id: dbItem.id, // Ahora es un UUID (string)
+          id: dbItem.id, // ID es string (UUID)
           name: dbItem.name,
-          price: Number(dbItem.basePrice), // Asegurar que sea número
+          
+          // PRECIOS
+          price: Number(dbItem.basePrice), 
+          // Si hay descuento, el original es el basePrice
           originalPrice: dbItem.discountPrice ? Number(dbItem.basePrice) : undefined,
-          // Si tiene imágenes, usa la primera, si no, una por defecto
+          // El precio con descuento (si existe)
+          discountPrice: dbItem.discountPrice ? Number(dbItem.discountPrice) : undefined,
+
+          // IMAGEN
           image: dbItem.images.length > 0 ? dbItem.images[0].url : 'https://via.placeholder.com/300',
+          
           category: dbItem.category?.name || 'General',
-          // Mapeamos las variantes para sacar tallas y colores únicos
+          
+          // LISTAS PARA FILTROS (Sets únicos)
           sizes: [...new Set(dbItem.variants.map((v: any) => v.size))],
           colors: [...new Set(dbItem.variants.map((v: any) => v.color))],
+          
+          // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+          // Pasamos los datos crudos que faltaban:
+          variants: dbItem.variants,       // <--- Array completo con stock real
+          description: dbItem.description, // <--- Texto de descripción
+          materialInfo: dbItem.materialInfo, // <--- Texto de materiales
+          shippingInfo: dbItem.shippingInfo, // <--- Texto de envíos
+          isActive: dbItem.isActive,       // <--- Estado activo/inactivo
+          // ---------------------------------
+
           isNew: dbItem.isNewArrival,
-          isSale: dbItem.discountPrice !== null,
-          materialInfo: dbItem.materialInfo,
-          shippingInfo: dbItem.shippingInfo,
+          isSale: dbItem.discountPrice !== null, 
         }));
 
         setProducts(mappedProducts);
@@ -89,43 +100,6 @@ function AppContent() {
       });
   }, []);
 
-  // Mock order for demonstration (Esto se queda igual porque es demo)
-  const [currentOrder] = useState<Order>({
-    id: "1",
-    orderNumber: "EST-2024-00123",
-    status: "in-transit",
-    items: [
-      { name: "Vestido Elegante Lavanda", quantity: 1 },
-      { name: "Accesorios Premium", quantity: 2 },
-    ],
-    total: 189.97,
-    createdAt: new Date(2024, 9, 20),
-    estimatedDelivery: new Date(2024, 9, 25),
-    trackingSteps: [
-      { label: "Pedido confirmado", completed: true, date: new Date(2024, 9, 20, 10, 30) },
-      { label: "Preparando envío", completed: true, date: new Date(2024, 9, 20, 14, 15) },
-      { label: "En camino", completed: true, date: new Date(2024, 9, 21, 8, 45) },
-      { label: "Entregado", completed: false },
-    ],
-  });
-
-  const pastOrder: Order = {
-    id: "2",
-    orderNumber: "PO-159-00737",
-    status: "delivered",
-    items: [{ name: "Accesorios Premium", quantity: 2 }],
-    total: 152.25,
-    createdAt: new Date(2024, 4, 3),
-    estimatedDelivery: new Date(2024, 4, 9),
-    trackingSteps: [
-      { label: "Pedido confirmado", completed: true, date: new Date(2024, 4, 1, 9, 0) },
-      { label: "En camino", completed: true, date: new Date(2024, 4, 5, 12, 0) },
-      { label: "Entregado", completed: true, date: new Date(2024, 4, 9, 15, 30) }
-    ],
-  };
-
-  const ordersForTracker: Order[] = [currentOrder, pastOrder];
-
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -134,22 +108,17 @@ function AppContent() {
     }
   }, [darkMode]);
 
-  const handleAddToCart = async (product: Product, size?: string) => {
-    await addToCart(product, size);
+  // Actualizado para soportar color
+  const handleAddToCart = async (product: Product, size?: string, color?: string) => {
+    // Si no viene talla/color (desde tarjeta rápida), usamos los primeros disponibles como fallback
+    // (Aunque idealmente ProductCard debería abrir el modal para obligar a elegir)
+    const finalSize = size || (product.sizes.length > 0 ? product.sizes[0] : "Única");
+    
+    await addToCart(product, finalSize); 
+    
     toast.success(`${product.name} agregado al carrito`, {
-      description: `Talla: ${size || product.sizes[0] || 'Única'}`,
+      description: `Talla: ${finalSize} ${color ? `- Color: ${color}` : ''}`,
     });
-  };
-
-  // 2. CORREGIDO: Usar 'products' en lugar de 'mockProducts'
-  const handleAddToCartByName = (productName: string) => {
-    const found = products.find((p) => p.name === productName);
-    if (found) {
-      handleAddToCart(found);
-      setIsCartOpen(true);
-    } else {
-      toast.error(`Producto '${productName}' no encontrado en catálogo`);
-    }
   };
 
   const handleUpdateQuantity = async (id: number, quantity: number) => {
@@ -180,16 +149,16 @@ function AppContent() {
     setIsCheckoutOpen(true);
   };
 
+  // Cálculo de totales
   const cartTotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + (item.price * item.quantity),
     0
   );
-  const shipping = cartTotal > 50 ? 0 : 5;
-  const tax = cartTotal * 0.1;
-  const total = cartTotal + shipping + tax;
+  const shipping = cartTotal > 200 ? 0 : 15; // Envío gratis > 200 (ejemplo)
+  const total = cartTotal + shipping;
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Cargando tienda...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">Cargando tienda...</div>;
   }
 
   return (
@@ -210,7 +179,7 @@ function AppContent() {
           favoriteCount={favoriteIds.length}
           darkMode={darkMode}
           onDarkModeToggle={() => setDarkMode(!darkMode)}
-          products={products} // 3. CORREGIDO: Pasar 'products'
+          products={products}
           onSelectProduct={setSelectedProduct}
           onCategorySelect={handleCategorySelect}
           selectedCategory={selectedCategory}
@@ -222,7 +191,8 @@ function AppContent() {
             path="/" 
             element={
               <Home
-                products={products} // 4. CORREGIDO: Pasar 'products'
+                // Filtramos solo productos activos
+                products={products.filter(p => p.isActive !== false)} 
                 onCategorySelect={handleCategorySelect}
                 onAddToCart={handleAddToCart}
                 onViewDetails={setSelectedProduct}
@@ -237,7 +207,7 @@ function AppContent() {
             path="/coleccion" 
             element={
               <Collection
-                products={products} // 5. CORREGIDO: Pasar 'products'
+                products={products.filter(p => p.isActive !== false)}
                 selectedCategory={selectedCategory}
                 onAddToCart={handleAddToCart}
                 onViewDetails={setSelectedProduct}
@@ -247,6 +217,7 @@ function AppContent() {
             } 
           />
           
+          {/* Ruta Admin */}
           <Route path="/admin/create-product" element={<CreateProduct />} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -260,7 +231,11 @@ function AppContent() {
           product={selectedProduct}
           open={!!selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onAddToCart={(product, size) => handleAddToCart(product, size)}
+          // Nota: ProductDetailModal ahora maneja size Y color internamente y llama a onAddToCart con ambos
+          onAddToCart={handleAddToCart}
+          // Conversión segura de ID para favoritos (ya que BD usa string UUID y favoritos array de numbers)
+          // Nota: Idealmente deberías cambiar favoriteIds a string[] en el futuro. 
+          // Por ahora hacemos un cast seguro si es posible parsear.
           isFavorite={selectedProduct ? favoriteIds.includes(Number(selectedProduct.id)) : false}
           onToggleFavorite={handleToggleFavorite}
         />
@@ -277,7 +252,6 @@ function AppContent() {
         <FavoritesDrawer
           open={isFavoritesOpen}
           onClose={() => setIsFavoritesOpen(false)}
-          // 6. CORREGIDO: Filtrar sobre 'products' y asegurar que la comparación sea por número
           favorites={products.filter((p) => favoriteIds.includes(Number(p.id)))}
           onRemoveFavorite={handleToggleFavorite}
           onViewDetails={setSelectedProduct}
@@ -306,7 +280,7 @@ function AppContent() {
         <SpringCollection
           open={isSpringCollectionOpen}
           onClose={() => setIsSpringCollectionOpen(false)}
-          products={products} // 7. CORREGIDO: Pasar 'products'
+          products={products}
           onAddToCart={handleAddToCart}
           onToggleFavorite={handleToggleFavorite}
           favoriteIds={favoriteIds}
@@ -315,7 +289,7 @@ function AppContent() {
         <AccessoriesCollection
           open={isAccessoriesCollectionOpen}
           onClose={() => setIsAccessoriesCollectionOpen(false)}
-          products={products} // 8. CORREGIDO: Pasar 'products'
+          products={products}
           onAddToCart={handleAddToCart}
           onToggleFavorite={handleToggleFavorite}
           favoriteIds={favoriteIds}

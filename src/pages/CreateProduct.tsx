@@ -31,6 +31,7 @@ interface ProductList {
   materialInfo: string;
   shippingInfo: string;
   categoryId: string;
+  gender: string; 
   images: { url: string }[];
   variants: { stock: number; size: string; color: string }[];
   category: { name: string };
@@ -95,6 +96,7 @@ function ProductListManager({ onEdit }: { onEdit: (product: ProductList) => void
                 <div className="flex items-center gap-2">
                   <h4 className="font-bold text-gray-800">{p.name}</h4>
                   {!p.isActive && <span className="text-xs bg-red-100 text-red-600 px-2 rounded font-medium">Oculto</span>}
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 rounded">{p.gender}</span>
                 </div>
                 <p className="text-sm text-gray-500">{p.category?.name} • Stock Total: <span className="font-medium text-black">{totalStock}</span></p>
                 
@@ -171,6 +173,7 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
     basePrice: '',
     discountPrice: '',
     categoryId: '',
+    gender: 'Unisex', // Valor por defecto
     isTrending: false,
     isNewArrival: true,
     isFeatured: false,
@@ -188,6 +191,7 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
             basePrice: String(initialData.basePrice),
             discountPrice: initialData.discountPrice ? String(initialData.discountPrice) : '',
             categoryId: initialData.categoryId,
+            gender: initialData.gender || 'Unisex',
             isTrending: initialData.isTrending,
             isNewArrival: initialData.isNewArrival,
             isFeatured: initialData.isFeatured,
@@ -364,24 +368,43 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* SECCIÓN / GÉNERO */}
         <div className="space-y-2">
-            <Label>Categoría</Label>
+            <Label>Sección / Género</Label>
+            <select 
+                name="gender" 
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3"
+                value={formData.gender} 
+                onChange={handleChange}
+            >
+                <option value="Mujer">Mujer</option>
+                <option value="Hombre">Hombre</option>
+                <option value="Niños">Niños</option>
+                <option value="Accesorios">Accesorios</option>
+                <option value="Unisex">Unisex</option>
+            </select>
+        </div>
+
+        {/* CATEGORÍA / TIPO DE PRENDA */}
+        <div className="space-y-2">
+            <Label>Tipo de Prenda (Categoría)</Label>
             <select name="categoryId" className="flex h-10 w-full rounded-md border border-input bg-background px-3" value={formData.categoryId} onChange={handleChange} required>
             <option value="">Seleccionar...</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
         </div>
-        <div className="space-y-2">
-            <Label>Imagen Principal</Label>
-            <div className="flex gap-4 items-center">
-                {/* Previsualización imagen actual si estamos editando */}
-                {initialData && initialData.images[0] && !file && (
-                    <img src={initialData.images[0].url} className="w-10 h-10 object-cover rounded border" title="Imagen actual" />
-                )}
-                <Input type="file" onChange={(e) => e.target.files && setFile(e.target.files[0])} accept="image/*" required={!initialData} />
-            </div>
-            {initialData && <p className="text-xs text-gray-400">Sube una imagen solo si quieres cambiar la actual.</p>}
-        </div>
+      </div>
+
+      <div className="space-y-2">
+          <Label>Imagen Principal</Label>
+          <div className="flex gap-4 items-center">
+              {/* Previsualización imagen actual si estamos editando */}
+              {initialData && initialData.images[0] && !file && (
+                  <img src={initialData.images[0].url} className="w-10 h-10 object-cover rounded border" title="Imagen actual" />
+              )}
+              <Input type="file" onChange={(e) => e.target.files && setFile(e.target.files[0])} accept="image/*" required={!initialData} />
+          </div>
+          {initialData && <p className="text-xs text-gray-400">Sube una imagen solo si quieres cambiar la actual.</p>}
       </div>
 
       {/* 3. GESTOR DE INVENTARIO */}
@@ -493,26 +516,98 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
   );
 }
 
-// --- COMPONENTE 3: FORMULARIO CATEGORÍA ---
-function CategoryForm({ onSuccess }: { onSuccess: () => void }) {
-    const [name, setName] = useState('');
-    const handleSubmit = async (e: any) => {
-      e.preventDefault();
+// --- COMPONENTE 3: GESTOR DE CATEGORÍAS (CON ELIMINAR) ---
+function CategoryManager() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const fetchCategories = () => {
+    fetch('http://localhost:4000/api/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data));
+  };
+
+  useEffect(() => { fetchCategories(); }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setLoading(true);
+    try {
       await fetch('http://localhost:4000/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
       });
       setName('');
-      onSuccess();
+      fetchCategories();
       alert('Categoría creada');
-    };
-    return (
-      <div className="p-4 border rounded bg-white mb-6 flex gap-2 items-end">
-        <div className="flex-1 space-y-1"><Label>Nueva Categoría</Label><Input placeholder="Ej: Zapatos" value={name} onChange={e => setName(e.target.value)} /></div>
-        <Button onClick={handleSubmit}>Crear</Button>
-      </div>
-    );
+    } catch (error) {
+      alert('Error creando');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NUEVA FUNCIÓN PARA ELIMINAR
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Seguro que quieres borrar esta categoría?')) return;
+    
+    try {
+      const res = await fetch(`http://localhost:4000/api/categories/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        fetchCategories();
+      } else {
+        alert('Error al borrar. Verifique que no esté en uso.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error de conexión');
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+        <div className="bg-white p-6 rounded-xl border shadow-sm">
+            <h3 className="font-bold text-lg mb-4 text-gray-800">Crear Nueva Categoría</h3>
+            <div className="flex gap-4 items-end">
+                <div className="flex-1 space-y-2">
+                    <Label>Nombre</Label>
+                    <Input placeholder="Ej: Pantalones, Blusas..." value={name} onChange={e => setName(e.target.value)} />
+                </div>
+                <Button onClick={handleSubmit} disabled={loading} className="bg-black text-white">
+                    {loading ? 'Guardando...' : 'Crear'}
+                </Button>
+            </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border shadow-sm">
+            <h3 className="font-bold text-lg mb-4 text-gray-800">Categorías Existentes ({categories.length})</h3>
+            {categories.length === 0 ? (
+                <p className="text-gray-400 text-sm italic">No hay categorías creadas.</p>
+            ) : (
+                <div className="flex flex-wrap gap-3">
+                    {categories.map((c) => (
+                        <div key={c.id} className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full border hover:bg-gray-200 transition-colors group">
+                            <span className="font-medium text-gray-700">{c.name}</span>
+                            {/* Botón de eliminar */}
+                            <button 
+                                onClick={() => handleDelete(c.id)}
+                                className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
+                                title="Eliminar categoría"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    </div>
+  );
 }
 
 // --- ADMIN PRINCIPAL ---
@@ -574,8 +669,8 @@ export default function AdminManager() {
           {activeTab === 'categories' && (
             <div>
                 <h2 className="text-xl font-bold mb-6">Gestión de Categorías</h2>
-                <CategoryForm onSuccess={fetchCategories} />
-                <div className="flex flex-wrap gap-2 mt-4">{categories.map(c => <span key={c.id} className="bg-gray-100 px-3 py-1 rounded-full text-sm border">{c.name}</span>)}</div>
+                {/* AQUI ESTA EL CAMBIO IMPORTANTE: USAMOS EL NUEVO GESTOR */}
+                <CategoryManager />
             </div>
           )}
         </main>

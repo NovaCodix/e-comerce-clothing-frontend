@@ -72,20 +72,22 @@ function AppContent() {
           // IMAGEN
           image: dbItem.images.length > 0 ? dbItem.images[0].url : 'https://via.placeholder.com/300',
           
+          // CATEGORÍA (Tipo de prenda: Pantalones, Camisas...)
           category: dbItem.category?.name || 'General',
           
+          // GÉNERO (Sección: Hombre, Mujer...) <--- ¡ESTO ES LO NUEVO IMPORTANTE!
+          gender: dbItem.gender || 'Unisex',
+
           // LISTAS PARA FILTROS (Sets únicos)
           sizes: [...new Set(dbItem.variants.map((v: any) => v.size))],
           colors: [...new Set(dbItem.variants.map((v: any) => v.color))],
           
-          // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
-          // Pasamos los datos crudos que faltaban:
-          variants: dbItem.variants,       // <--- Array completo con stock real
-          description: dbItem.description, // <--- Texto de descripción
-          materialInfo: dbItem.materialInfo, // <--- Texto de materiales
-          shippingInfo: dbItem.shippingInfo, // <--- Texto de envíos
-          isActive: dbItem.isActive,       // <--- Estado activo/inactivo
-          // ---------------------------------
+          // DATOS COMPLETOS
+          variants: dbItem.variants,       // Array completo con stock real
+          description: dbItem.description, // Texto de descripción
+          materialInfo: dbItem.materialInfo, // Texto de materiales
+          shippingInfo: dbItem.shippingInfo, // Texto de envíos
+          isActive: dbItem.isActive,       // Estado activo/inactivo
 
           isNew: dbItem.isNewArrival,
           isSale: dbItem.discountPrice !== null, 
@@ -111,7 +113,6 @@ function AppContent() {
   // Actualizado para soportar color
   const handleAddToCart = async (product: Product, size?: string, color?: string) => {
     // Si no viene talla/color (desde tarjeta rápida), usamos los primeros disponibles como fallback
-    // (Aunque idealmente ProductCard debería abrir el modal para obligar a elegir)
     const finalSize = size || (product.sizes.length > 0 ? product.sizes[0] : "Única");
     
     await addToCart(product, finalSize); 
@@ -231,11 +232,8 @@ function AppContent() {
           product={selectedProduct}
           open={!!selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          // Nota: ProductDetailModal ahora maneja size Y color internamente y llama a onAddToCart con ambos
           onAddToCart={handleAddToCart}
           // Conversión segura de ID para favoritos (ya que BD usa string UUID y favoritos array de numbers)
-          // Nota: Idealmente deberías cambiar favoriteIds a string[] en el futuro. 
-          // Por ahora hacemos un cast seguro si es posible parsear.
           isFavorite={selectedProduct ? favoriteIds.includes(Number(selectedProduct.id)) : false}
           onToggleFavorite={handleToggleFavorite}
         />

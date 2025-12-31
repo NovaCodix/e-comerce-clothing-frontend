@@ -87,7 +87,17 @@ app.post('/api/categories', async (req, res) => {
     res.status(500).json({ error: 'Error creando categoría' });
   }
 });
-
+// DELETE: Eliminar categoría
+app.delete('/api/categories/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.category.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error) {
+    // Es posible que falle si hay productos usando esta categoría
+    res.status(500).json({ error: 'Error eliminando categoría (puede estar en uso)' });
+  }
+});
 // --- RUTAS DE PRODUCTOS ---
 
 app.get('/api/products', async (req, res) => {
@@ -113,7 +123,7 @@ app.delete('/api/products/:id', async (req, res) => {
 
 app.post('/api/products', upload.single('imageFile'), async (req, res) => {
   try {
-    const { name, description, categoryId, materialInfo, shippingInfo } = req.body;
+    const { name, description, categoryId, gender,materialInfo, shippingInfo } = req.body;
     const basePrice = parseFloat(req.body.basePrice);
     const discountPrice = req.body.discountPrice && parseFloat(req.body.discountPrice) > 0 
         ? parseFloat(req.body.discountPrice) 
@@ -139,7 +149,7 @@ app.post('/api/products', upload.single('imageFile'), async (req, res) => {
     const product = await prisma.product.create({
       data: {
         name, slug, description, materialInfo, shippingInfo, basePrice, discountPrice,
-        categoryId, isTrending, isNewArrival, isFeatured, isActive,
+        categoryId, isTrending, isNewArrival, isFeatured, isActive,gender,
         images: { create: [{ url: imageUrl, isMain: true }] },
         variants: {
           create: variants.map((v: any) => ({
@@ -163,7 +173,7 @@ app.post('/api/products', upload.single('imageFile'), async (req, res) => {
 app.put('/api/products/:id', upload.single('imageFile'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, categoryId, materialInfo, shippingInfo } = req.body;
+    const { name, description, categoryId, materialInfo,gender, shippingInfo } = req.body;
     
     // Conversiones de tipos
     const basePrice = parseFloat(req.body.basePrice);
@@ -203,7 +213,7 @@ app.put('/api/products/:id', upload.single('imageFile'), async (req, res) => {
         data: {
           name, slug: name.toLowerCase().replace(/ /g, '-') + '-' + Date.now(),
           description, materialInfo, shippingInfo, basePrice, discountPrice,
-          categoryId, isTrending, isNewArrival, isFeatured, isActive,
+          categoryId, isTrending, isNewArrival, isFeatured, isActive,gender,
           ...imageData // Solo actualiza imagen si hubo archivo
         }
       });

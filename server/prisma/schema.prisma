@@ -39,6 +39,7 @@ model Product {
   isTrending    Boolean  @default(false)
   isNewArrival  Boolean  @default(true)
   isFeatured    Boolean  @default(false)
+  gender        String   @default("Unisex") // Hombre, Mujer, Niños, Accesorios, Unisex
   
   category      Category @relation(fields: [categoryId], references: [id])
   categoryId    String

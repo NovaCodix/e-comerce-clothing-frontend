@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 
 interface CollectionProps {
   products: Product[];
-  selectedCategory: string;
+  selectedCategory: string; // Esta es la pestaña seleccionada (Mujer, Hombre, Todos...)
   onAddToCart: (product: Product, size?: string) => void;
   onViewDetails: (product: Product) => void;
   favoriteIds: number[];
@@ -22,41 +22,64 @@ export function Collection({
   favoriteIds,
   onToggleFavorite,
 }: CollectionProps) {
+  
+  // Estado local para los filtros de la barra lateral (Izquierda)
   const [filters, setFilters] = useState({
-    categories: [] as string[],
+    categories: [] as string[], // Esto filtra por "Tipo de Prenda" (Blusas, Vestidos...)
     sizes: [] as string[],
     colors: [] as string[],
     priceRange: [0, 500] as [number, number],
   });
+  
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-  // Filter products based on category and filters
+  // --- LÓGICA DE FILTRADO MAESTRA ---
   const filteredProducts = products.filter((product) => {
-    // Category filter
-    const categoryMatch =
-      selectedCategory === "Todos" ||
-      (selectedCategory === "Ofertas" && product.isSale) ||
-      (selectedCategory === "Mujer" && ["Vestidos", "Blusas", "Chaquetas"].includes(product.category)) ||
-      (selectedCategory === "Hombre" && ["Pantalones"].includes(product.category)) ||
-      (selectedCategory === "Niños" && product.category === "Niños") ||
-      (selectedCategory === "Accesorios" && product.category === "Accesorios");
+    
+    // 1. FILTRO POR PESTAÑA PRINCIPAL (Header: Mujer, Hombre, Niños...)
+    // ----------------------------------------
+    let mainTabMatch = false;
 
-    if (!categoryMatch) return false;
+    if (selectedCategory === "Todos") {
+      mainTabMatch = true;
+    } else if (selectedCategory === "Ofertas") {
+      // Si la pestaña es Ofertas, buscamos productos con descuento
+      mainTabMatch = !!product.isSale;
+    } else {
+      // AQUÍ ESTÁ LA CORRECCIÓN:
+      // Comparamos la pestaña seleccionada con el GÉNERO del producto.
+      // Si estoy en la pestaña "Mujer", busco productos donde gender sea "Mujer".
+      // Usamos el operador ?. por si el producto antiguo no tiene género definido.
+      mainTabMatch = product.gender === selectedCategory;
+    }
 
-    // Filters
+    // Si no coincide con la pestaña principal, lo descartamos inmediatamente
+    if (!mainTabMatch) return false;
+
+
+    // 2. FILTROS LATERALES (Sidebar: Tipo, Talla, Color...)
+    // ------------------------------
+    
+    // A. Categorías (Tipo de prenda: Vestidos, Pantalones...)
     if (filters.categories.length > 0 && !filters.categories.includes(product.category)) {
       return false;
     }
 
-    if (filters.sizes.length > 0 && !product.sizes.some((size) => filters.sizes.includes(size))) {
-      return false;
+    // B. Tallas (Tiene alguna de las tallas seleccionadas?)
+    if (filters.sizes.length > 0) {
+      const hasSize = product.sizes.some((size) => filters.sizes.includes(size));
+      if (!hasSize) return false;
     }
 
-    if (filters.colors.length > 0 && !product.colors.some((color) => filters.colors.includes(color))) {
-      return false;
+    // C. Colores (Tiene alguno de los colores seleccionados?)
+    if (filters.colors.length > 0) {
+      const hasColor = product.colors.some((color) => filters.colors.includes(color));
+      if (!hasColor) return false;
     }
 
-    if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) {
+    // D. Precio (Rango) - Usamos el precio REAL (Si tiene oferta, usa ese)
+    const effectivePrice = product.discountPrice || product.price;
+    if (effectivePrice < filters.priceRange[0] || effectivePrice > filters.priceRange[1]) {
       return false;
     }
 
@@ -70,22 +93,24 @@ export function Collection({
       style={{ paddingTop: "calc(var(--header-offset, 0px) + 1rem)" }}
     >
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Filters sidebar - Desktop */}
-        <div className="hidden lg:block">
+        {/* Sidebar Desktop */}
+        <div className="hidden lg:block w-64 flex-shrink-0">
           <Filters filters={filters} onFilterChange={setFilters} />
         </div>
 
-        {/* Products grid */}
+        {/* Grilla de Productos */}
         <div className="flex-1">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="mb-2">Nuestra Colección</h2>
+              <h2 className="mb-2 text-2xl font-bold">
+                {selectedCategory === "Todos" ? "Nuestra Colección" : selectedCategory}
+              </h2>
               <p className="text-muted-foreground">
                 {filteredProducts.length} productos encontrados
               </p>
             </div>
 
-            {/* Mobile filters button */}
+            {/* Botón Filtros Móvil */}
             <Button 
               variant="outline" 
               className="lg:hidden rounded-full"
@@ -95,26 +120,40 @@ export function Collection({
             </Button>
           </div>
 
-          <ProductGrid
-            products={filteredProducts}
-            onAddToCart={(product) => onAddToCart(product)}
-            onViewDetails={onViewDetails}
-            favoriteIds={favoriteIds}
-            onToggleFavorite={onToggleFavorite}
-          />
+          {filteredProducts.length > 0 ? (
+            <ProductGrid
+              products={filteredProducts}
+              onAddToCart={(product) => onAddToCart(product)}
+              onViewDetails={onViewDetails}
+              favoriteIds={favoriteIds}
+              onToggleFavorite={onToggleFavorite}
+            />
+          ) : (
+            <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed">
+              <p className="text-xl text-gray-500 font-medium">No se encontraron productos.</p>
+              <p className="text-sm text-gray-400 mt-2">Intenta cambiar de pestaña o limpiar los filtros laterales.</p>
+              <Button 
+                variant="link" 
+                onClick={() => setFilters({ categories: [], sizes: [], colors: [], priceRange: [0, 500] })}
+                className="mt-4"
+              >
+                Limpiar Filtros
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Mobile Filters Drawer */}
+      {/* Drawer Filtros Móvil */}
       <Sheet open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-        <SheetContent side="left" className="w-full sm:w-80 overflow-y-auto p-0 flex flex-col">
+        <SheetContent side="left" className="w-full sm:w-80 overflow-y-auto p-0 flex flex-col bg-white">
           <SheetHeader className="px-6 pt-6 pb-2 flex-shrink-0">
             <SheetTitle>Filtros</SheetTitle>
             <SheetDescription className="sr-only">
               Filtra productos por categorías, tallas, colores y precio
             </SheetDescription>
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
             <Filters filters={filters} onFilterChange={setFilters} />
           </div>
         </SheetContent>

@@ -20,7 +20,7 @@ export interface Product {
   discountPrice?: number; // Agregado para soportar la oferta nueva
   image: string;
   category: string;
-  
+  gender?: string;
   // Listas resumen (para filtros visuales)
   sizes: string[];
   colors: string[];

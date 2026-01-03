@@ -21,6 +21,8 @@ import { toast, Toaster } from "sonner";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useCart } from "./lib/supabase/hooks/useCart";
 import CreateProduct from './pages/CreateProduct';
+import AdminLogin from './pages/AdminLogin';
+import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 
 export default function App() {
   return (
@@ -166,135 +168,153 @@ function AppContent() {
     <Router>
       <Toaster position="top-center" richColors />
       
-      <AnimatedBackground darkMode={darkMode} />
-      
-      <div className="min-h-screen bg-background/50 flex flex-col w-full">
-        <PromoBar />
-        
-        <Header
-          onCartClick={() => setIsCartOpen(true)}
-          onAuthClick={() => setIsAuthOpen(true)}
-          onFavoritesClick={() => setIsFavoritesOpen(true)}
-          onOrderTrackingClick={() => {}}
-          cartItemCount={cartItems.length}
-          favoriteCount={favoriteIds.length}
-          darkMode={darkMode}
-          onDarkModeToggle={() => setDarkMode(!darkMode)}
-          products={products}
-          onSelectProduct={setSelectedProduct}
-          onCategorySelect={handleCategorySelect}
-          selectedCategory={selectedCategory}
+      <Routes>
+        {/* Rutas de Administración (SIN Layout de tienda) */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route 
+          path="/admin/create-product" 
+          element={
+            <ProtectedAdminRoute>
+              <CreateProduct />
+            </ProtectedAdminRoute>
+          } 
         />
 
-        <ScrollToTop />
-        <Routes>
-          <Route 
-            path="/" 
-            element={
-              <Home
-                // Filtramos solo productos activos
-                products={products.filter(p => p.isActive !== false)} 
-                onCategorySelect={handleCategorySelect}
-                onAddToCart={handleAddToCart}
-                onViewDetails={setSelectedProduct}
-                favoriteIds={favoriteIds}
-                onToggleFavorite={handleToggleFavorite}
-                onSpringCollectionOpen={() => setIsSpringCollectionOpen(true)}
-                onAccessoriesCollectionOpen={() => setIsAccessoriesCollectionOpen(true)}
-              />
-            } 
-          />
-          <Route 
-            path="/coleccion" 
-            element={
-              <Collection
-                products={products.filter(p => p.isActive !== false)}
-                selectedCategory={selectedCategory}
-                onAddToCart={handleAddToCart}
-                onViewDetails={setSelectedProduct}
-                favoriteIds={favoriteIds}
-                onToggleFavorite={handleToggleFavorite}
-              />
-            } 
-          />
-          
-          {/* Ruta Admin */}
-          <Route path="/admin/create-product" element={<CreateProduct />} />
-          
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        {/* Rutas Públicas (CON Layout de tienda) */}
+        <Route
+          path="/*"
+          element={
+            <>
+              <AnimatedBackground darkMode={darkMode} />
+              
+              <div className="min-h-screen bg-background/50 flex flex-col w-full">
+                <PromoBar />
+                
+                <Header
+                  onCartClick={() => setIsCartOpen(true)}
+                  onAuthClick={() => setIsAuthOpen(true)}
+                  onFavoritesClick={() => setIsFavoritesOpen(true)}
+                  onOrderTrackingClick={() => {}}
+                  cartItemCount={cartItems.length}
+                  favoriteCount={favoriteIds.length}
+                  darkMode={darkMode}
+                  onDarkModeToggle={() => setDarkMode(!darkMode)}
+                  products={products}
+                  onSelectProduct={setSelectedProduct}
+                  onCategorySelect={handleCategorySelect}
+                  selectedCategory={selectedCategory}
+                />
 
-        <div aria-hidden="true" className="h-12 md:h-20" />
-        <Footer onOpenSizeGuide={() => setIsSizeGuideOpen(true)} />
+                <ScrollToTop />
+                <Routes>
+                  <Route 
+                    path="/" 
+                    element={
+                      <Home
+                        // Filtramos solo productos activos
+                        products={products.filter(p => p.isActive !== false)} 
+                        onCategorySelect={handleCategorySelect}
+                        onAddToCart={handleAddToCart}
+                        onViewDetails={setSelectedProduct}
+                        favoriteIds={favoriteIds}
+                        onToggleFavorite={handleToggleFavorite}
+                        onSpringCollectionOpen={() => setIsSpringCollectionOpen(true)}
+                        onAccessoriesCollectionOpen={() => setIsAccessoriesCollectionOpen(true)}
+                      />
+                    } 
+                  />
+                  <Route 
+                    path="/coleccion" 
+                    element={
+                      <Collection
+                        products={products.filter(p => p.isActive !== false)}
+                        selectedCategory={selectedCategory}
+                        onAddToCart={handleAddToCart}
+                        onViewDetails={setSelectedProduct}
+                        favoriteIds={favoriteIds}
+                        onToggleFavorite={handleToggleFavorite}
+                      />
+                    } 
+                  />
+                  
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
 
-        {/* Modals and drawers */}
-        <ProductDetailModal
-          product={selectedProduct}
-          open={!!selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onAddToCart={handleAddToCart}
-          // Conversión segura de ID para favoritos (ya que BD usa string UUID y favoritos array de numbers)
-          isFavorite={selectedProduct ? favoriteIds.includes(Number(selectedProduct.id)) : false}
-          onToggleFavorite={handleToggleFavorite}
+                <div aria-hidden="true" className="h-12 md:h-20" />
+                <Footer onOpenSizeGuide={() => setIsSizeGuideOpen(true)} />
+
+                {/* Modals and drawers */}
+                <ProductDetailModal
+                  product={selectedProduct}
+                  open={!!selectedProduct}
+                  onClose={() => setSelectedProduct(null)}
+                  onAddToCart={handleAddToCart}
+                  // Conversión segura de ID para favoritos (ya que BD usa string UUID y favoritos array de numbers)
+                  isFavorite={selectedProduct ? favoriteIds.includes(Number(selectedProduct.id)) : false}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+
+                <CartDrawer
+                  open={isCartOpen}
+                  onClose={() => setIsCartOpen(false)}
+                  items={cartItems}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  onRemoveItem={handleRemoveItem}
+                  onCheckout={handleCheckout}
+                />
+
+                <FavoritesDrawer
+                  open={isFavoritesOpen}
+                  onClose={() => setIsFavoritesOpen(false)}
+                  favorites={products.filter((p) => favoriteIds.includes(Number(p.id)))}
+                  onRemoveFavorite={handleToggleFavorite}
+                  onViewDetails={setSelectedProduct}
+                  onAddToCart={(product) => handleAddToCart(product)}
+                />
+
+                <CheckoutModal
+                  open={isCheckoutOpen}
+                  onClose={() => setIsCheckoutOpen(false)}
+                  items={cartItems}
+                  total={total}
+                  onAuthRequired={() => {
+                    setIsCheckoutOpen(false);
+                    setIsAuthOpen(true);
+                    toast.error("Debes iniciar sesión para realizar el pago");
+                  }}
+                />
+
+                <AuthModal open={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+
+                <SizeGuide
+                  open={isSizeGuideOpen}
+                  onClose={() => setIsSizeGuideOpen(false)}
+                />
+
+                <SpringCollection
+                  open={isSpringCollectionOpen}
+                  onClose={() => setIsSpringCollectionOpen(false)}
+                  products={products}
+                  onAddToCart={handleAddToCart}
+                  onToggleFavorite={handleToggleFavorite}
+                  favoriteIds={favoriteIds}
+                />
+
+                <AccessoriesCollection
+                  open={isAccessoriesCollectionOpen}
+                  onClose={() => setIsAccessoriesCollectionOpen(false)}
+                  products={products}
+                  onAddToCart={handleAddToCart}
+                  onToggleFavorite={handleToggleFavorite}
+                  favoriteIds={favoriteIds}
+                />
+
+                <WhatsAppButton />
+              </div>
+            </>
+          }
         />
-
-        <CartDrawer
-          open={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-          items={cartItems}
-          onUpdateQuantity={handleUpdateQuantity}
-          onRemoveItem={handleRemoveItem}
-          onCheckout={handleCheckout}
-        />
-
-        <FavoritesDrawer
-          open={isFavoritesOpen}
-          onClose={() => setIsFavoritesOpen(false)}
-          favorites={products.filter((p) => favoriteIds.includes(Number(p.id)))}
-          onRemoveFavorite={handleToggleFavorite}
-          onViewDetails={setSelectedProduct}
-          onAddToCart={(product) => handleAddToCart(product)}
-        />
-
-        <CheckoutModal
-          open={isCheckoutOpen}
-          onClose={() => setIsCheckoutOpen(false)}
-          items={cartItems}
-          total={total}
-          onAuthRequired={() => {
-            setIsCheckoutOpen(false);
-            setIsAuthOpen(true);
-            toast.error("Debes iniciar sesión para realizar el pago");
-          }}
-        />
-
-        <AuthModal open={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-
-        <SizeGuide
-          open={isSizeGuideOpen}
-          onClose={() => setIsSizeGuideOpen(false)}
-        />
-
-        <SpringCollection
-          open={isSpringCollectionOpen}
-          onClose={() => setIsSpringCollectionOpen(false)}
-          products={products}
-          onAddToCart={handleAddToCart}
-          onToggleFavorite={handleToggleFavorite}
-          favoriteIds={favoriteIds}
-        />
-
-        <AccessoriesCollection
-          open={isAccessoriesCollectionOpen}
-          onClose={() => setIsAccessoriesCollectionOpen(false)}
-          products={products}
-          onAddToCart={handleAddToCart}
-          onToggleFavorite={handleToggleFavorite}
-          favoriteIds={favoriteIds}
-        />
-
-        <WhatsAppButton />
-      </div>
+      </Routes>
     </Router>
   );
 }

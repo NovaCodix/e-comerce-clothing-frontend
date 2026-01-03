@@ -19,8 +19,8 @@ export default function ProtectedAdminRoute({ children }: Props) {
   }
 
   if (!isAdmin) {
-    // No autorizado: redirigir a home
-    return <Navigate to="/" replace />;
+    // No autorizado: redirigir al login de admin
+    return <Navigate to="/admin/login" replace />;
   }
 
   return <>{children}</>;

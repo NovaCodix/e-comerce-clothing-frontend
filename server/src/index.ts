@@ -4,10 +4,22 @@ import { PrismaClient } from '@prisma/client';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction } from 'express';
+
+// Cargar variables de entorno
+dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
 const PORT = 4000;
+
+// Interfaz para Request con usuario autenticado
+interface AuthRequest extends Request {
+  userId?: string;
+  isAdmin?: boolean;
+}
 
 // 1. CONFIGURACIÓN MULTER
 const storage = multer.diskStorage({
@@ -26,6 +38,35 @@ const upload = multer({ storage: storage });
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// --- MIDDLEWARE DE AUTENTICACIÓN JWT ---
+const authenticateAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Token no proporcionado' });
+    }
+
+    const token = authHeader.substring(7); // Quitar "Bearer "
+    const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key';
+
+    // Verificar y decodificar el token
+    const decoded = jwt.verify(token, JWT_SECRET) as { isAdmin: boolean };
+    
+    if (!decoded.isAdmin) {
+      return res.status(403).json({ error: 'Acceso denegado: no eres administrador' });
+    }
+
+    req.isAdmin = true;
+    next();
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ error: 'Token expirado, vuelve a iniciar sesión' });
+    }
+    return res.status(401).json({ error: 'Token inválido' });
+  }
+};
 
 // --- RUTAS DE CONFIGURACIÓN (TALLAS) ---
 
@@ -51,8 +92,8 @@ app.get('/api/sizes', async (req, res) => {
   }
 });
 
-// POST: Crear una nueva talla (Solo si no existe)
-app.post('/api/sizes', async (req, res) => {
+// POST: Crear una nueva talla (Solo si no existe) - PROTEGIDA
+app.post('/api/sizes', authenticateAdmin, async (req: AuthRequest, res) => {
   try {
     const { value } = req.body;
     const cleanValue = value.trim().toUpperCase();
@@ -77,7 +118,7 @@ app.get('/api/categories', async (req, res) => {
   res.json(categories);
 });
 
-app.post('/api/categories', async (req, res) => {
+app.post('/api/categories', authenticateAdmin, async (req: AuthRequest, res) => {
   try {
     const { name, description } = req.body;
     const slug = name.toLowerCase().replace(/ /g, '-');
@@ -87,8 +128,9 @@ app.post('/api/categories', async (req, res) => {
     res.status(500).json({ error: 'Error creando categoría' });
   }
 });
-// DELETE: Eliminar categoría
-app.delete('/api/categories/:id', async (req, res) => {
+
+// DELETE: Eliminar categoría - PROTEGIDA
+app.delete('/api/categories/:id', authenticateAdmin, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     await prisma.category.delete({ where: { id } });
@@ -112,7 +154,7 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', authenticateAdmin, async (req: AuthRequest, res) => {
   try {
     await prisma.product.delete({ where: { id: req.params.id } });
     res.json({ success: true });
@@ -121,7 +163,7 @@ app.delete('/api/products/:id', async (req, res) => {
   }
 });
 
-app.post('/api/products', upload.single('imageFile'), async (req, res) => {
+app.post('/api/products', authenticateAdmin, upload.single('imageFile'), async (req: AuthRequest, res) => {
   try {
     const { name, description, categoryId, gender,materialInfo, shippingInfo } = req.body;
     const basePrice = parseFloat(req.body.basePrice);
@@ -169,8 +211,8 @@ app.post('/api/products', upload.single('imageFile'), async (req, res) => {
 
 // ... (Tus otros endpoints)
 
-// PUT: ACTUALIZAR PRODUCTO
-app.put('/api/products/:id', upload.single('imageFile'), async (req, res) => {
+// PUT: ACTUALIZAR PRODUCTO - PROTEGIDA
+app.put('/api/products/:id', authenticateAdmin, upload.single('imageFile'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { name, description, categoryId, materialInfo,gender, shippingInfo } = req.body;
@@ -247,6 +289,29 @@ app.put('/api/products/:id', upload.single('imageFile'), async (req, res) => {
 app.post('/api/checkout', async (req, res) => {
     // ... Tu lógica de checkout existente ...
     res.json({ success: true });
+});
+
+// --- RUTA DE LOGIN ADMIN ---
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  
+  // Leemos la contraseña del archivo .env (o usamos una por defecto por seguridad)
+  const SECRET_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+  const JWT_SECRET = process.env.JWT_SECRET || "default-secret-key";
+
+  if (password === SECRET_PASSWORD) {
+    // Generamos un token JWT que expira en 8 horas
+    const token = jwt.sign(
+      { isAdmin: true },
+      JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+    
+    // Devolvemos el token JWT
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: "Contraseña incorrecta" });
+  }
 });
 
 app.listen(PORT, () => {

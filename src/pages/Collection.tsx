@@ -10,8 +10,8 @@ interface CollectionProps {
   selectedCategory: string; // Esta es la pestaña seleccionada (Mujer, Hombre, Todos...)
   onAddToCart: (product: Product, size?: string) => void;
   onViewDetails: (product: Product) => void;
-  favoriteIds: number[];
-  onToggleFavorite: (productId: number) => void;
+  favoriteIds: (string | number)[];
+  onToggleFavorite: (productId: number | string) => void;
 }
 
 export function Collection({

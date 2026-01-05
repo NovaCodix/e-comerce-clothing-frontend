@@ -24,7 +24,7 @@ interface ProductDetailModalProps {
   // ACTUALIZADO: Acepta color y talla
   onAddToCart: (product: Product, size: string, color: string) => void;
   isFavorite?: boolean;
-  onToggleFavorite?: (id: number) => void;
+  onToggleFavorite?: (id: number | string) => void;
 }
 
 export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavorite, onToggleFavorite }: ProductDetailModalProps) {
@@ -95,8 +95,10 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
               />
               
               <div className="absolute top-4 left-4 flex flex-col gap-2">
-                {product.isNew && <Badge className="bg-[#a8d5ba] hover:bg-[#a8d5ba]">Nuevo</Badge>}
-                {hasDiscount && <Badge className="bg-[#f4b8c4] hover:bg-[#f4b8c4]">Oferta</Badge>}
+                {product.isNew && <Badge className="bg-[#a8d5ba] hover:bg-[#a8d5ba]">✨ Nuevo</Badge>}
+                {product.isTrending && <Badge className="bg-orange-500 hover:bg-orange-600 text-white">🔥 En Tendencia</Badge>}
+                {product.isFeatured && <Badge className="!bg-purple-600 hover:!bg-purple-700 !text-white">⭐ Destacado</Badge>}
+                {hasDiscount && <Badge className="bg-[#f4b8c4] hover:bg-[#f4b8c4]">🔥 Oferta</Badge>}
               </div>
 
               {selectedSize && currentStock === 0 && (

@@ -6,8 +6,8 @@ interface TrendingProductsProps {
   products: Product[];
   onAddToCart: (product: Product) => void;
   onViewDetails: (product: Product) => void;
-  favoriteIds: number[];
-  onToggleFavorite: (id: number) => void;
+  favoriteIds: (string | number)[];
+  onToggleFavorite: (id: number | string) => void;
 }
 
 export function TrendingProducts({
@@ -17,10 +17,18 @@ export function TrendingProducts({
   favoriteIds,
   onToggleFavorite,
 }: TrendingProductsProps) {
-  // Get top 4 products (mix of new and sale items)
-  const trendingProducts = products
-    .filter((p) => p.isNew || p.isSale)
-    .slice(0, 4);
+  // Filtrar productos marcados como "en tendencia" (isTrending = true)
+  // Si no hay suficientes, complementar con nuevos y en oferta
+  const trendingProducts = products.filter((p) => p.isTrending && p.isActive);
+  
+  // Si hay menos de 4, complementar con productos nuevos o en oferta
+  const fallbackProducts = trendingProducts.length < 4
+    ? products
+        .filter((p) => !p.isTrending && (p.isNew || p.isSale) && p.isActive)
+        .slice(0, 4 - trendingProducts.length)
+    : [];
+  
+  const displayProducts = [...trendingProducts, ...fallbackProducts].slice(0, 4);
 
   return (
     <section className="py-20 bg-background">
@@ -55,7 +63,7 @@ export function TrendingProducts({
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {trendingProducts.map((product, index) => (
+          {displayProducts.map((product, index) => (
             <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 30 }}
@@ -72,7 +80,7 @@ export function TrendingProducts({
                 product={product}
                 onAddToCart={onAddToCart}
                 onViewDetails={onViewDetails}
-                isFavorite={favoriteIds.includes(product.id)}
+                isFavorite={favoriteIds.some(favId => String(favId) === String(product.id))}
                 onToggleFavorite={onToggleFavorite}
               />
             </motion.div>

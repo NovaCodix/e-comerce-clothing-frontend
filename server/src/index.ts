@@ -7,6 +7,8 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
+import sharp from 'sharp';
+import ordersRouter from './routes/orders';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -33,11 +35,55 @@ const storage = multer.diskStorage({
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
-const upload = multer({ storage: storage });
+
+// Limitar tamaño de archivo a 10MB
+const upload = multer({ 
+  storage: storage,
+  limits: { 
+    fileSize: 10 * 1024 * 1024 // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Formato de imagen no válido. Solo JPG, PNG, WEBP'));
+    }
+  }
+});
+
+// Función auxiliar para comprimir imágenes automáticamente
+async function compressImage(filePath: string): Promise<string> {
+  try {
+    const dir = path.dirname(filePath);
+    const ext = path.extname(filePath);
+    const basename = path.basename(filePath, ext);
+    const compressedPath = path.join(dir, `${basename}-optimized.webp`);
+    
+    await sharp(filePath)
+      .resize(1200, 1200, { 
+        fit: 'inside', 
+        withoutEnlargement: true 
+      })
+      .webp({ quality: 85 })
+      .toFile(compressedPath);
+    
+    // Eliminar el archivo original
+    fs.unlinkSync(filePath);
+    
+    return compressedPath;
+  } catch (error) {
+    console.error('Error comprimiendo imagen:', error);
+    return filePath; // Si falla, devolvemos el original
+  }
+}
 
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// --- RUTAS DE ORDERS ---
+app.use('/api/orders', ordersRouter);
 
 // --- MIDDLEWARE DE AUTENTICACIÓN JWT ---
 const authenticateAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -183,7 +229,10 @@ app.post('/api/products', authenticateAdmin, upload.single('imageFile'), async (
 
     let imageUrl = '';
     if (req.file) {
-      imageUrl = `http://localhost:${PORT}/uploads/${req.file.filename}`;
+      // Comprimir la imagen antes de guardarla
+      const compressedPath = await compressImage(req.file.path);
+      const filename = path.basename(compressedPath);
+      imageUrl = `http://localhost:${PORT}/uploads/${filename}`;
     }
 
     const slug = name.toLowerCase().replace(/ /g, '-') + '-' + Date.now();
@@ -236,7 +285,11 @@ app.put('/api/products/:id', authenticateAdmin, upload.single('imageFile'), asyn
     // Lógica de Imagen: Si viene archivo nuevo, se usa. Si no, no tocamos la imagen.
     let imageData = {};
     if (req.file) {
-      const imageUrl = `http://localhost:${PORT}/uploads/${req.file.filename}`;
+      // Comprimir la imagen antes de guardarla
+      const compressedPath = await compressImage(req.file.path);
+      const filename = path.basename(compressedPath);
+      const imageUrl = `http://localhost:${PORT}/uploads/${filename}`;
+      
       // Primero borramos las viejas (opcional, pero limpio)
       await prisma.productImage.deleteMany({ where: { productId: id } });
       // Preparamos la nueva

@@ -85,7 +85,16 @@ function ProductListManager({ onEdit }: { onEdit: (product: ProductList) => void
     }
   };
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => { 
+    fetchProducts(); 
+    
+    // Auto-refresh cada 30 segundos para mantener el stock actualizado
+    const interval = setInterval(() => {
+      fetchProducts();
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) return <div className="p-10 text-center text-gray-500">Cargando inventario...</div>;
 
@@ -94,7 +103,10 @@ function ProductListManager({ onEdit }: { onEdit: (product: ProductList) => void
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h3 className="text-2xl font-bold text-gray-900">Inventario Actual</h3>
-          <p className="text-sm text-gray-500 mt-1">{products.length} productos en total</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {products.length} productos en total
+            <span className="ml-2 text-xs text-indigo-600">• Auto-actualización cada 30s</span>
+          </p>
         </div>
         <button 
           onClick={fetchProducts} 
@@ -113,9 +125,9 @@ function ProductListManager({ onEdit }: { onEdit: (product: ProductList) => void
           return (
             <div key={p.id} className="group bg-white border-2 border-gray-100 hover:border-indigo-200 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center transition-all hover:shadow-lg">
               {/* Imagen */}
-              <div className="w-20 h-24 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200 shadow-sm">
+              <div className="w-20 h-24 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200 shadow-sm">
                 {p.images[0] ? (
-                    <img src={p.images[0].url} className="w-full h-full object-cover" alt={p.name} />
+                    <img src={p.images[0].url} loading="lazy" className="w-full h-full object-cover" alt={p.name} />
                 ) : (
                     <div className="flex items-center justify-center h-full text-gray-300">
                       <ImageIcon className="w-8 h-8"/>
@@ -132,7 +144,7 @@ function ProductListManager({ onEdit }: { onEdit: (product: ProductList) => void
                       Oculto
                     </span>
                   )}
-                  <span className="px-2 py-1 text-xs bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 rounded-full font-semibold">
+                  <span className="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded-full font-semibold">
                     {p.gender}
                   </span>
                 </div>
@@ -186,14 +198,14 @@ function ProductListManager({ onEdit }: { onEdit: (product: ProductList) => void
               <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
                 <button 
                   onClick={() => onEdit(p)} 
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 text-indigo-600 hover:from-blue-100 hover:to-indigo-100 border border-indigo-200 transition-all font-medium shadow-sm hover:shadow"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-50 text-indigo-600 hover:bg-blue-100 border border-indigo-200 transition-all font-medium shadow-sm hover:shadow"
                 >
                   <Pencil className="w-4 h-4" />
                   <span className="sm:hidden">Editar</span>
                 </button>
                 <button 
                   onClick={() => deleteProduct(p.id)} 
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-50 to-pink-50 text-red-600 hover:from-red-100 hover:to-pink-100 border border-red-200 transition-all font-medium shadow-sm hover:shadow"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-all font-medium shadow-sm hover:shadow"
                 >
                   <Trash2 className="w-4 h-4" />
                   <span className="sm:hidden">Eliminar</span>
@@ -409,7 +421,7 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
       
       {/* Banner de Edición */}
       {initialData && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm">
+          <div className="bg-blue-50 border-2 border-blue-300 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm">
               <div className="text-indigo-800 font-bold flex items-center gap-2">
                   <Pencil className="w-5 h-5"/> 
                   <span>EDITANDO: <span className="text-indigo-600">{initialData.name}</span></span>
@@ -433,33 +445,35 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
       )}
 
       {/* 1. Visibilidad */}
-      <div className="flex justify-between items-center bg-gradient-to-r from-emerald-50 to-teal-50 p-5 rounded-2xl border-2 border-emerald-200">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.isActive ? 'bg-emerald-500' : 'bg-gray-400'} transition-colors`}>
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {formData.isActive ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-              )}
-            </svg>
+      <div className="bg-emerald-50 p-6 rounded-2xl border-2 border-emerald-200">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5">
+          <div className="flex items-center gap-4">
+            <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md ${formData.isActive ? 'bg-emerald-500' : 'bg-gray-400'} transition-all`}>
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                {formData.isActive ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                )}
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-lg mb-1">Visibilidad del Producto</h3>
+              <p className="text-sm text-gray-600">
+                {formData.isActive ? "Visible en la tienda" : "Oculto para los clientes"}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Visibilidad del Producto</h3>
-            <p className="text-sm text-gray-600">
-              {formData.isActive ? "Visible en la tienda" : "Oculto para los clientes"}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-            <span className={`font-bold text-sm ${formData.isActive ? "text-emerald-600" : "text-gray-500"}`}>
-                {formData.isActive ? "VISIBLE" : "OCULTO"}
+          <div className="flex items-center gap-4">
+            <span className={`font-bold text-base ${formData.isActive ? "text-emerald-600" : "text-gray-500"}`}>
+              {formData.isActive ? "VISIBLE" : "OCULTO"}
             </span>
             <Checkbox 
               checked={formData.isActive} 
               onCheckedChange={(c) => handleCheckbox(c as boolean, 'isActive')}
-              className="w-6 h-6"
+              className="w-7 h-7"
             />
+          </div>
         </div>
       </div>
 
@@ -551,7 +565,7 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
       </div>
 
       {/* Imagen Principal */}
-      <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-8 rounded-2xl border-2 border-purple-200 space-y-5">
+      <div className="bg-purple-50 p-8 rounded-2xl border-2 border-purple-200 space-y-5">
         <div className="flex items-center gap-3">
           <ImageIcon className="w-6 h-6 text-purple-600" />
           <Label className="text-gray-900 font-bold text-xl">Imagen Principal del Producto</Label>
@@ -560,19 +574,19 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
         <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
           {/* Previsualización imagen actual si estamos editando */}
           {initialData && initialData.images[0] && !file && (
-            <div className="relative group">
-              <img src={initialData.images[0].url} className="w-32 h-32 object-cover rounded-2xl border-4 border-white shadow-xl" alt="Imagen actual" />
-              <div className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-white text-sm font-bold">Imagen Actual</span>
+            <div className="relative group w-24 h-24 flex-shrink-0">
+              <img src={initialData.images[0].url} loading="lazy" className="w-full h-full object-cover rounded-xl border-2 border-gray-200" alt="Imagen actual" />
+              <div className="absolute inset-0 bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <span className="text-white text-xs font-bold">Actual</span>
               </div>
             </div>
           )}
           
           {file && (
-            <div className="relative group">
-              <img src={URL.createObjectURL(file)} className="w-32 h-32 object-cover rounded-2xl border-4 border-purple-400 shadow-xl" alt="Nueva imagen" />
-              <div className="absolute inset-0 bg-purple-600/70 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-white text-sm font-bold">Nueva Imagen</span>
+            <div className="relative group w-24 h-24 flex-shrink-0">
+              <img src={URL.createObjectURL(file)} loading="lazy" className="w-full h-full object-cover rounded-xl border-2 border-purple-300" alt="Nueva imagen" />
+              <div className="absolute inset-0 bg-purple-600/70 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <span className="text-white text-xs font-bold">Nueva</span>
               </div>
             </div>
           )}
@@ -595,7 +609,7 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
       </div>
 
       {/* 3. GESTOR DE INVENTARIO */}
-      <div className="border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 p-8 rounded-2xl space-y-8">
+      <div className="border-2 border-indigo-200 bg-indigo-50 p-8 rounded-2xl space-y-8">
         <div className="flex items-center gap-3 pb-4 border-b-2 border-indigo-200">
             <Box className="w-6 h-6 text-indigo-600"/>
             <h3 className="font-bold text-xl text-indigo-900">Variantes e Inventario</h3>
@@ -625,9 +639,10 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
                                 onClick={() => toggleSize(size)}
                                 className={`px-4 py-2.5 text-sm font-bold rounded-xl border-2 transition-all shadow-sm hover:shadow-md ${
                                     selectedSizes.includes(size) 
-                                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-700' 
+                                        ? 'bg-indigo-600 text-white border-indigo-700' 
                                         : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-400'
                                 }`}
+                                style={selectedSizes.includes(size) ? { backgroundColor: '#4F46E5', color: '#FFFFFF' } : {}}
                             >
                                 {size || "?"}
                             </button>
@@ -648,7 +663,7 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
                 {selectedSizes.length > 0 && (
                     <div className="animate-in fade-in slide-in-from-top-2 space-y-3">
                         <Label className="block font-bold text-gray-800 text-base">3. Stock por Talla</Label>
-                        <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-xl border-2 border-gray-300 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <div className="bg-gray-100 p-5 rounded-xl border-2 border-gray-300 grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {selectedSizes.map(size => (
                                 <div key={size} className="flex flex-col gap-2 bg-white p-3 rounded-lg border-2 border-gray-200 shadow-sm">
                                     <span className="text-sm font-bold text-gray-700 uppercase text-center">{size}</span>
@@ -669,7 +684,8 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
                     type="button" 
                     onClick={addBulkVariants} 
                     disabled={selectedSizes.length === 0}
-                    className="w-full h-14 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base"
+                    className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base"
+                    style={{ backgroundColor: selectedSizes.length === 0 ? '#9CA3AF' : '#4F46E5', color: '#FFFFFF' }}
                 >
                     <ArrowRight className="w-5 h-5"/> Agregar Variantes
                 </button>
@@ -677,7 +693,7 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
 
             {/* Panel Derecho: Lista Actual */}
             <div className="md:col-span-6 overflow-hidden flex flex-col max-h-[600px]">
-                <div className="bg-gradient-to-r from-indigo-100 to-blue-100 p-5 font-bold text-base border-b-2 border-indigo-200 flex justify-between items-center rounded-t-2xl">
+                <div className="bg-indigo-100 p-5 font-bold text-base border-b-2 border-indigo-200 flex justify-between items-center rounded-t-2xl">
                     <span className="text-gray-800">Lista Actual</span>
                     <span className="bg-indigo-600 text-white px-3 py-1 rounded-full text-sm font-bold">{variants.length}</span>
                 </div>
@@ -775,7 +791,7 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
       </div>
 
       {/* Etiquetas de Marketing */}
-      <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-8 rounded-2xl border-2 border-amber-200">
+      <div className="bg-amber-50 p-8 rounded-2xl border-2 border-amber-200">
         <Label className="text-gray-900 font-bold text-xl mb-6 block flex items-center gap-3">
           ⭐ Etiquetas de Marketing
         </Label>
@@ -799,7 +815,8 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
       <button 
         type="submit" 
         disabled={loading}
-        className="w-full h-20 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xl font-bold rounded-2xl shadow-2xl hover:shadow-indigo-300 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-4"
+        className="w-full h-20 bg-indigo-600 text-white text-xl font-bold rounded-2xl shadow-2xl hover:shadow-indigo-300 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-4"
+        style={{ backgroundColor: loading ? '#4F46E5' : '#4F46E5', color: '#FFFFFF' }}
       >
         {loading ? (
           <>
@@ -894,27 +911,28 @@ function CategoryManager() {
       </div>
 
       {/* Formulario de Nueva Categoría */}
-      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-2xl border-2 border-indigo-100">
+      <div className="bg-indigo-50 p-6 rounded-2xl border-2 border-indigo-100">
         <h3 className="font-bold text-lg mb-4 text-gray-900 flex items-center gap-2">
           <Plus className="w-5 h-5 text-indigo-600" />
           Crear Nueva Categoría
         </h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="category-name" className="text-gray-700 font-medium">Nombre de la Categoría</Label>
+            <Label htmlFor="category-name" className="text-gray-700 font-medium mb-2 block">Nombre de la Categoría</Label>
             <Input
               id="category-name"
               placeholder="Ej: Pantalones, Blusas..."
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={loading}
-              className="mt-1 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
+              className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500"
             />
           </div>
           <button
             type="submit"
             disabled={loading || !name.trim()}
-            className="w-full px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+            className="w-full px-4 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+            style={{ backgroundColor: (loading || !name.trim()) ? '#9CA3AF' : '#4F46E5', color: '#FFFFFF' }}
           >
             {loading ? 'Creando...' : '✨ Crear Categoría'}
           </button>
@@ -944,7 +962,7 @@ function CategoryManager() {
             {categories.map((c) => (
               <div 
                 key={c.id} 
-                className="group relative flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100 hover:from-indigo-50 hover:to-purple-50 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-indigo-300 transition-all"
+                className="group relative flex items-center justify-between bg-gray-50 hover:bg-indigo-50 px-4 py-3 rounded-xl border-2 border-gray-200 hover:border-indigo-300 transition-all"
               >
                 <span className="font-semibold text-gray-800 group-hover:text-indigo-700 transition-colors">
                   {c.name}
@@ -1001,13 +1019,13 @@ export default function AdminManager() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Header Superior */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold shadow-lg">
                 A
               </div>
               <div>
@@ -1036,9 +1054,10 @@ export default function AdminManager() {
                 onClick={() => { setActiveTab('list'); setProductToEdit(null); }} 
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all ${
                   activeTab === 'list' 
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200' 
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
                     : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
                 }`}
+                style={activeTab === 'list' ? { backgroundColor: '#4F46E5', color: '#FFFFFF' } : {}}
               >
                 <Box className="w-5 h-5" />
                 <span>Lista de Productos</span>
@@ -1048,9 +1067,10 @@ export default function AdminManager() {
                 onClick={() => { setActiveTab('create'); setProductToEdit(null); }} 
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all ${
                   activeTab === 'create' 
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200' 
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
                     : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
                 }`}
+                style={activeTab === 'create' ? { backgroundColor: '#4F46E5', color: '#FFFFFF' } : {}}
               >
                 <Plus className="w-5 h-5" />
                 <span>Crear Producto</span>
@@ -1060,9 +1080,10 @@ export default function AdminManager() {
                 onClick={() => { setActiveTab('categories'); setProductToEdit(null); }} 
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all ${
                   activeTab === 'categories' 
-                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-200' 
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
                     : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
                 }`}
+                style={activeTab === 'categories' ? { backgroundColor: '#4F46E5', color: '#FFFFFF' } : {}}
               >
                 <Box className="w-5 h-5" />
                 <span>Categorías</span>

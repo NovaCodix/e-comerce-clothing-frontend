@@ -8,6 +8,8 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 export interface CartItem extends Product {
   quantity: number;
   selectedSize: string;
+  selectedColor?: string;
+  variantId: string; // ID de la variante específica para el checkout
 }
 
 interface CartDrawerProps {
@@ -20,10 +22,7 @@ interface CartDrawerProps {
 }
 
 export function CartDrawer({ open, onClose, items, onUpdateQuantity, onRemoveItem, onCheckout }: CartDrawerProps) {
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = subtotal > 50 ? 0 : 5;
-  const tax = subtotal * 0.1;
-  const total = subtotal + shipping + tax;
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -106,32 +105,14 @@ export function CartDrawer({ open, onClose, items, onUpdateQuantity, onRemoveIte
             {/* Summary */}
             <div className="border-t pt-4 px-6 pb-6 space-y-4 bg-card">
               <div className="space-y-2">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span>S/ {subtotal.toFixed(2)}</span>
+                <div className="flex justify-between">
+                  <span className="text-lg font-semibold">Total</span>
+                  <span className="text-lg font-bold">S/ {total.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Envío</span>
-                  <span>{shipping === 0 ? "Gratis" : `S/ ${shipping.toFixed(2)}`}</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Impuestos</span>
-                  <span>S/ {tax.toFixed(2)}</span>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="flex justify-between">
-                <span>Total</span>
-                <span className="">S/ {total.toFixed(2)}</span>
-              </div>
-
-              {subtotal < 50 && (
-                <p className="bg-[#a8d5ba]/10 dark:bg-[#a8d5ba]/20 p-3 rounded-lg border border-[#a8d5ba]">
-                  💡 Agrega S/ {(50 - subtotal).toFixed(2)} más para envío gratis
+                <p className="text-sm text-muted-foreground">
+                  * Los precios ya incluyen impuestos y envío
                 </p>
-              )}
+              </div>
 
               <div className="flex flex-col gap-2">
                 <Button

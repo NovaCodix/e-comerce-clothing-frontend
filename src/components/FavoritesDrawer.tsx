@@ -9,7 +9,7 @@ interface FavoritesDrawerProps {
   open: boolean;
   onClose: () => void;
   favorites: Product[];
-  onRemoveFavorite: (id: number) => void;
+  onRemoveFavorite: (id: number | string) => void;
   onViewDetails: (product: Product) => void;
   onAddToCart: (product: Product) => void;
 }

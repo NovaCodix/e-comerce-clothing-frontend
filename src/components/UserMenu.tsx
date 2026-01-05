@@ -114,7 +114,7 @@ export function UserMenu({ onAccountClick, onSignInClick }: UserMenuProps) {
         {isAdmin && (
           <DropdownMenuItem
             onClick={() => navigate('/admin')}
-            className="cursor-pointer rounded-md mx-1 px-2 py-2.5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 focus:from-purple-100 focus:to-pink-100 dark:focus:from-purple-900/30 dark:focus:to-pink-900/30"
+            className="cursor-pointer rounded-md mx-1 px-2 py-2.5 bg-purple-50 dark:bg-purple-950/20 focus:bg-purple-100 dark:focus:bg-purple-900/30"
           >
             <Settings className="mr-3 h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />
             <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">Administrador</span>

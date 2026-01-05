@@ -17,8 +17,8 @@ interface SpringCollectionProps {
   onClose: () => void;
   products: Product[];
   onAddToCart: (product: Product) => void;
-  onToggleFavorite: (id: number) => void;
-  favoriteIds: number[];
+  onToggleFavorite: (id: number | string) => void;
+  favoriteIds: (string | number)[];
 }
 
 export function SpringCollection({
@@ -201,7 +201,7 @@ export function SpringCollection({
                       >
                         <Heart
                           className={`w-5 h-5 ${
-                            favoriteIds.includes(product.id)
+                            favoriteIds.some(favId => String(favId) === String(product.id))
                               ? "fill-red-500 text-red-500"
                               : "text-foreground"
                           }`}

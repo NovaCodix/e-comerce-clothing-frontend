@@ -138,6 +138,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
               <img
                 src="/logo.svg"
                 alt="ESTILO"
+                loading="lazy"
                 className="w-10 h-10 object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />
@@ -337,6 +338,7 @@ export function AuthModal({ open, onClose }: AuthModalProps) {
               <img
                 src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80"
                 alt="Visual estilo"
+                loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover"
                 onError={() => setSideImageLoaded(false)}
               />

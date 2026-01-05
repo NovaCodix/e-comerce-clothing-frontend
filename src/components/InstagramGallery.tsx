@@ -112,7 +112,7 @@ export function InstagramGallery() {
             href="https://instagram.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full hover:shadow-lg transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-pink-500 text-white rounded-full hover:shadow-lg transition-all"
           >
             <Instagram className="w-5 h-5" />
             Seguir @estilo_oficial

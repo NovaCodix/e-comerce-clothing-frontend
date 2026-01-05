@@ -30,6 +30,8 @@ export interface Product {
   
   isNew?: boolean;
   isSale?: boolean;
+  isTrending?: boolean;  // ← AGREGADO: Indica si está en tendencia
+  isFeatured?: boolean;  // ← AGREGADO: Indica si está destacado
   isActive?: boolean;
   
   // Info extra (Opcionales para evitar errores si faltan en BD)
@@ -43,7 +45,7 @@ interface ProductCardProps {
   onAddToCart: (product: Product) => void;
   onViewDetails: (product: Product) => void;
   isFavorite?: boolean;
-  onToggleFavorite?: (id: number) => void;
+  onToggleFavorite?: (id: number | string) => void;
 }
 
 export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, onToggleFavorite }: ProductCardProps) {
@@ -104,6 +106,24 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
                 <Badge className="bg-[#a8d5ba] hover:bg-[#a8d5ba] shadow-lg">✨ Nuevo</Badge>
                 </motion.div>
             )}
+            {product.isTrending && (
+                <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", delay: 0.25 }}
+                >
+                <Badge className="bg-orange-500 hover:bg-orange-600 text-white shadow-lg">🔥 En Tendencia</Badge>
+                </motion.div>
+            )}
+            {product.isFeatured && (
+                <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", delay: 0.27 }}
+                >
+                <Badge className="!bg-purple-600 hover:!bg-purple-700 !text-white shadow-lg">⭐ Destacado</Badge>
+                </motion.div>
+            )}
             {hasDiscount && (
                 <motion.div
                 initial={{ scale: 0, rotate: 180 }}
@@ -122,10 +142,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
           onClick={(e) => {
             e.stopPropagation();
             if (onToggleFavorite) {
-              const idNum = typeof product.id === 'string' ? parseInt(product.id, 10) : product.id;
-              if (!isNaN(idNum)) {
-                onToggleFavorite(idNum);
-              }
+              onToggleFavorite(product.id);
             }
           }}
           className={`absolute top-3 right-3 w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center transition-all ${
@@ -138,21 +155,20 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
           <Heart className={`w-5 h-5 transition-all ${isFavorite ? "fill-white text-white" : ""}`} />
         </motion.button>
 
-        {/* Quick add overlay (SOLO SI HAY STOCK) */}
+        {/* Quick actions overlay (SOLO SI HAY STOCK) */}
         {!isOutOfStock && (
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
+            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
                 size="sm"
-                className="w-full bg-white text-[#2a2a2a] hover:bg-white/90 rounded-full"
+                className="w-full bg-white text-[#2a2a2a] hover:bg-white/90 rounded-full font-semibold"
                 onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
                   e.stopPropagation();
-                  // Forzamos abrir el modal para que elija talla/color
-                  onViewDetails(product); 
+                  onAddToCart(product);
                 }}
-            >
+              >
                 <ShoppingCart className="w-4 h-4 mr-2" />
-                Ver Opciones
-            </Button>
+                Agregar al Carrito
+              </Button>
             </div>
         )}
       </div>

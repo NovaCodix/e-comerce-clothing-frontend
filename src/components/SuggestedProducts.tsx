@@ -5,8 +5,8 @@ interface SuggestedProductsProps {
   products: Product[];
   onAddToCart: (product: Product) => void;
   onViewDetails: (product: Product) => void;
-  favoriteIds: number[];
-  onToggleFavorite: (id: number) => void;
+  favoriteIds: (string | number)[];
+  onToggleFavorite: (id: number | string) => void;
 }
 
 export function SuggestedProducts({ 
@@ -44,7 +44,7 @@ export function SuggestedProducts({
                 product={product}
                 onAddToCart={onAddToCart}
                 onViewDetails={onViewDetails}
-                isFavorite={favoriteIds.includes(product.id)}
+                isFavorite={favoriteIds.some(favId => String(favId) === String(product.id))}
                 onToggleFavorite={onToggleFavorite}
               />
             </motion.div>

@@ -3,10 +3,10 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
-import { CreditCard, Smartphone, DollarSign, Copy } from "lucide-react";
+import { CreditCard, Smartphone, DollarSign, Copy, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { CartItem } from "./CartDrawer";
-import { useAuthContext } from "../contexts/AuthContext";
+import { toast } from "sonner";
 
 interface CheckoutModalProps {
   open: boolean;
@@ -14,16 +14,27 @@ interface CheckoutModalProps {
   items: CartItem[];
   total: number;
   onAuthRequired: () => void;
+  onCheckoutSuccess: () => void; // Para limpiar el carrito
 }
 
-export function CheckoutModal({ open, onClose, items, total, onAuthRequired }: CheckoutModalProps) {
+export function CheckoutModal({ open, onClose, items, total, onAuthRequired, onCheckoutSuccess }: CheckoutModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<"yape" | "account">("yape");
   const [discountCode, setDiscountCode] = useState("");
-  // Guest checkout: do not require authentication for now
-  // const { user } = useAuthContext();
-  // Antes: si el modal se abría sin usuario, se redirigía al flujo de auth.
-  // Para la primera versión permitimos pagar sin iniciar sesión, por lo que
-  // esta verificación queda deshabilitada temporalmente.
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [wantsDelivery, setWantsDelivery] = useState(true);
+  
+  const DELIVERY_COST = 10;
+  const finalTotal = wantsDelivery ? total + DELIVERY_COST : total;
+  
+  // Datos del cliente
+  const [customerData, setCustomerData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    district: "",
+    reference: ""
+  });
 
   const storeAccount = {
     bank: "BCP",
@@ -35,18 +46,124 @@ export function CheckoutModal({ open, onClose, items, total, onAuthRequired }: C
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      // UX: mostrar una pequeña confirmación (esto es mínimo — se puede mejorar con toasts)
-      alert("Copiado al portapapeles");
+      toast.success("Copiado al portapapeles");
     } catch (err) {
       console.error(err);
+      toast.error("Error al copiar");
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate payment processing
-    alert("¡Pago procesado exitosamente! Gracias por tu compra.");
-    onClose();
+    
+    // Validaciones
+    if (!customerData.name || !customerData.phone) {
+      toast.error("Por favor completa todos los campos obligatorios");
+      return;
+    }
+
+    if (wantsDelivery && !customerData.address) {
+      toast.error("Por favor ingresa tu dirección de envío");
+      return;
+    }
+
+    if (items.length === 0) {
+      toast.error("Tu carrito está vacío");
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Validar que todos los items tengan variantId
+      const invalidItems = items.filter(item => !item.variantId);
+      if (invalidItems.length > 0) {
+        toast.error("Error: Algunos productos no tienen variante asignada. Por favor, vuelve a agregarlos al carrito.");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Preparar datos para el checkout
+      const checkoutData = {
+        customerName: customerData.name,
+        customerEmail: customerData.email || undefined,
+        customerPhone: customerData.phone,
+        shippingAddress: wantsDelivery ? JSON.stringify({
+          address: customerData.address,
+          district: customerData.district,
+          reference: customerData.reference
+        }) : "Recojo en tienda",
+        deliveryCost: wantsDelivery ? DELIVERY_COST : 0,
+        wantsDelivery: wantsDelivery,
+        items: items.map(item => ({
+          productId: String(item.id), // El item YA ES el producto
+          variantId: item.variantId!,
+          quantity: item.quantity,
+          size: item.selectedSize,
+          color: item.selectedColor || "Sin especificar"
+        })),
+        paymentMethod: "MANUAL"
+      };
+
+      console.log('📤 Enviando datos de checkout:', checkoutData);
+
+      // Llamar al endpoint de checkout
+      const response = await fetch('http://localhost:4000/api/orders/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(checkoutData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.type === 'INSUFFICIENT_STOCK') {
+          toast.error(data.error, {
+            duration: 5000,
+            description: "Por favor actualiza tu carrito"
+          });
+        } else {
+          toast.error(data.error || "Error al procesar la orden");
+        }
+        return;
+      }
+
+      // Éxito: Orden creada
+      toast.success("¡Orden creada exitosamente!", {
+        description: `Número de orden: ${data.order.orderNumber}`
+      });
+
+      // Limpiar el carrito
+      onCheckoutSuccess();
+
+      // Cerrar el modal
+      onClose();
+
+      // Preparar mensaje de WhatsApp
+      const whatsappMessage = `¡Hola! He realizado un pedido en su tienda.\n\n` +
+        `📦 *Orden #${data.order.orderNumber}*\n` +
+        `💰 Total: S/ ${data.order.total}\n` +
+        `📱 Cliente: ${customerData.name}\n\n` +
+        `Voy a realizar el pago por ${paymentMethod === 'yape' ? 'Yape' : 'transferencia bancaria'}. ` +
+        `¿Me pueden confirmar la recepción de mi pedido?`;
+
+      // Redirigir a WhatsApp
+      const whatsappNumber = "51999999999"; // Reemplaza con tu número
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+      
+      // Pequeña pausa para que el usuario vea el mensaje de éxito
+      setTimeout(() => {
+        window.open(whatsappUrl, '_blank');
+      }, 1000);
+
+    } catch (error) {
+      console.error('Error en checkout:', error);
+      toast.error("Error de conexión. Por favor intenta de nuevo.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -113,41 +230,115 @@ export function CheckoutModal({ open, onClose, items, total, onAuthRequired }: C
 
           <Separator />
 
-          {/* Shipping Information */}
-          <div>
-            <h3 className="mb-4">Información de Envío</h3>
-            <div className="grid md:grid-cols-2 gap-6">
+          {/* Datos del Cliente */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Datos del Cliente</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="firstName" className="mb-3">Nombre</Label>
-                  <Input id="firstName" placeholder="Tu nombre" required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
+                <Label htmlFor="name" className="mb-2">Nombre Completo *</Label>
+                <Input
+                  id="name"
+                  required
+                  placeholder="Ej: Juan Pérez"
+                  value={customerData.name}
+                  onChange={(e) => setCustomerData({...customerData, name: e.target.value})}
+                  className="h-12"
+                />
               </div>
+
               <div>
-                <Label htmlFor="lastName" className="mb-3">Apellido</Label>
-                  <Input id="lastName" placeholder="Tu apellido" required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="email" className="mb-3">Email</Label>
-                  <Input id="email" type="email" placeholder="tu@email.com" required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="address" className="mb-3">Dirección</Label>
-                  <Input id="address" placeholder="Calle, número, etc." required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
-              </div>
-              <div>
-                <Label htmlFor="city" className="mb-3">Ciudad</Label>
-                  <Input id="city" placeholder="Ciudad" required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
-              </div>
-              <div>
-                <Label htmlFor="zipCode" className="mb-3">Código Postal</Label>
-                  <Input id="zipCode" placeholder="12345" required className="h-12 px-4 bg-white/95 dark:bg-[#071522] text-foreground placeholder:text-muted-foreground shadow-sm border border-white/20 dark:border-[#18303a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#b8a89a]/40" />
+                <Label htmlFor="phone" className="mb-2">Teléfono / WhatsApp *</Label>
+                <Input
+                  id="phone"
+                  required
+                  placeholder="Ej: 999 888 777"
+                  value={customerData.phone}
+                  onChange={(e) => setCustomerData({...customerData, phone: e.target.value})}
+                  className="h-12"
+                />
               </div>
             </div>
+
+            <div>
+              <Label htmlFor="email" className="mb-2">Email (Opcional)</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="tu@email.com"
+                value={customerData.email}
+                onChange={(e) => setCustomerData({...customerData, email: e.target.value})}
+                className="h-12"
+              />
+            </div>
+
+            {/* Opción de Delivery */}
+            <div className="bg-muted/50 p-6 rounded-xl border">
+              <div className="flex items-start gap-5">
+                <input
+                  type="checkbox"
+                  id="delivery"
+                  checked={wantsDelivery}
+                  onChange={(e) => setWantsDelivery(e.target.checked)}
+                  className="w-6 h-6 mt-0.5 cursor-pointer accent-primary"
+                />
+                <div className="flex-1">
+                  <Label htmlFor="delivery" className="text-base font-semibold cursor-pointer block mb-2">
+                    🚚 Quiero delivery a domicilio (+S/ {DELIVERY_COST.toFixed(2)})
+                  </Label>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {wantsDelivery 
+                      ? "Entregaremos tu pedido en la dirección indicada" 
+                      : "Recogerás tu pedido en nuestra tienda"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {wantsDelivery && (
+              <>
+                <div>
+                  <Label htmlFor="address" className="mb-2">Dirección de Envío *</Label>
+                  <Input
+                    id="address"
+                    required
+                    placeholder="Ej: Av. Principal 123, Dpto 201"
+                    value={customerData.address}
+                    onChange={(e) => setCustomerData({...customerData, address: e.target.value})}
+                    className="h-12"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="district" className="mb-2">Distrito</Label>
+                    <Input
+                      id="district"
+                      placeholder="Ej: Miraflores"
+                      value={customerData.district}
+                      onChange={(e) => setCustomerData({...customerData, district: e.target.value})}
+                      className="h-12"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="reference" className="mb-2">Referencia</Label>
+                    <Input
+                      id="reference"
+                      placeholder="Ej: Cerca al parque"
+                      value={customerData.reference}
+                      onChange={(e) => setCustomerData({...customerData, reference: e.target.value})}
+                      className="h-12"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <Separator />
 
-          {/* Payment Details: mostrar sólo Yape (QR) y Cuenta de la tienda. Mantuvimos el código
-              original comentado arriba para reactivar métodos en el futuro. */}
+          {/* Payment Details: mostrar sólo Yape (QR) y Cuenta de la tienda. */}
 
           {paymentMethod === "yape" && (
             <div className="bg-muted p-6 rounded-xl text-center border border-white/20 dark:border-[#18303a]">
@@ -156,9 +347,9 @@ export function CheckoutModal({ open, onClose, items, total, onAuthRequired }: C
                 {/* Ideal: reemplazar por imagen de QR real: <img src="/path/to/yape-qr.png" className="w-full h-full object-contain rounded-md" /> */}
                 <div className="text-muted-foreground">QR Code (placeholder)</div>
               </div>
-              <p className="mt-4">Monto a pagar: <strong>S/ {total.toFixed(2)}</strong></p>
+              <p className="mt-4">Monto a pagar: <strong>S/ {finalTotal.toFixed(2)}</strong></p>
               <div className="flex justify-center gap-2 mt-3">
-                <Button type="button" variant="outline" onClick={() => copyToClipboard(total.toFixed(2))}>
+                <Button type="button" variant="outline" onClick={() => copyToClipboard(finalTotal.toFixed(2))}>
                   <Copy className="mr-2 w-4 h-4" /> Copiar monto
                 </Button>
                 <Button type="button" onClick={() => alert('Abre la app Yape y escanea el QR')}>¿Cómo pago?</Button>
@@ -208,8 +399,8 @@ export function CheckoutModal({ open, onClose, items, total, onAuthRequired }: C
                 <div>
                   <div className="text-sm text-muted-foreground">Monto a transferir</div>
                   <div className="flex items-center gap-3 mt-1">
-                    <div className="font-medium">S/ {total.toFixed(2)}</div>
-                    <Button type="button" variant="outline" onClick={() => copyToClipboard(total.toFixed(2))}>
+                    <div className="font-medium">S/ {finalTotal.toFixed(2)}</div>
+                    <Button type="button" variant="outline" onClick={() => copyToClipboard(finalTotal.toFixed(2))}>
                       <Copy className="w-4 h-4 mr-2" /> Copiar monto
                     </Button>
                   </div>
@@ -252,9 +443,20 @@ export function CheckoutModal({ open, onClose, items, total, onAuthRequired }: C
               </div>
             ))}
             <Separator />
-            <div className="flex justify-between">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Subtotal</span>
+              <span>S/ {total.toFixed(2)}</span>
+            </div>
+            {wantsDelivery && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>🚚 Delivery</span>
+                <span>S/ {DELIVERY_COST.toFixed(2)}</span>
+              </div>
+            )}
+            <Separator />
+            <div className="flex justify-between font-semibold text-lg">
               <span>Total a Pagar</span>
-              <span className="">S/ {total.toFixed(2)}</span>
+              <span className="">S/ {finalTotal.toFixed(2)}</span>
             </div>
           </div>
 
@@ -265,14 +467,23 @@ export function CheckoutModal({ open, onClose, items, total, onAuthRequired }: C
               variant="outline"
               className="flex-1 rounded-full"
               onClick={onClose}
+              disabled={isProcessing}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               className="flex-1 bg-[#b8a89a] hover:bg-[#a89888] rounded-full"
+              disabled={isProcessing}
             >
-              Pagar Ahora
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                'Finalizar Compra'
+              )}
             </Button>
           </div>
         </form>

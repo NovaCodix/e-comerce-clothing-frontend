@@ -16,8 +16,8 @@ interface HomeProps {
   products: Product[];
   onAddToCart: (product: Product, size?: string) => void;
   onViewDetails: (product: Product) => void;
-  favoriteIds: number[];
-  onToggleFavorite: (productId: number) => void;
+  favoriteIds: (string | number)[];
+  onToggleFavorite: (productId: number | string) => void;
   onSpringCollectionOpen: () => void;
   onAccessoriesCollectionOpen: () => void;
   onCategorySelect: (category: string) => void;

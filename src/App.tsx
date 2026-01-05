@@ -22,6 +22,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { useCart } from "./lib/supabase/hooks/useCart";
 import CreateProduct from './pages/CreateProduct';
 import AdminLogin from './pages/AdminLogin';
+import AdminOrders from './pages/AdminOrders';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 
 export default function App() {
@@ -43,7 +44,7 @@ function AppContent() {
   // Hook del carrito usando los productos reales
   const { cartItems, addToCart, updateQuantity, removeItem } = useCart(products);
   
-  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<(string | number)[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
@@ -53,6 +54,25 @@ function AppContent() {
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [isSpringCollectionOpen, setIsSpringCollectionOpen] = useState(false);
   const [isAccessoriesCollectionOpen, setIsAccessoriesCollectionOpen] = useState(false);
+
+  // Cargar favoritos desde localStorage al inicio
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('favorites');
+    if (savedFavorites) {
+      try {
+        setFavoriteIds(JSON.parse(savedFavorites));
+      } catch (err) {
+        console.error('Error al cargar favoritos:', err);
+      }
+    }
+  }, []);
+
+  // Guardar favoritos en localStorage cuando cambien
+  useEffect(() => {
+    if (favoriteIds.length >= 0) {
+      localStorage.setItem('favorites', JSON.stringify(favoriteIds));
+    }
+  }, [favoriteIds]);
 
   // CARGAR DATOS DE LA BASE DE DATOS
   useEffect(() => {
@@ -92,10 +112,24 @@ function AppContent() {
           isActive: dbItem.isActive,       // Estado activo/inactivo
 
           isNew: dbItem.isNewArrival,
-          isSale: dbItem.discountPrice !== null, 
+          isSale: dbItem.discountPrice !== null,
+          isTrending: dbItem.isTrending,   // ← AGREGADO: Campo de productos en tendencia
+          isFeatured: dbItem.isFeatured,   // ← AGREGADO: Campo de productos destacados
         }));
 
         setProducts(mappedProducts);
+        
+        // LIMPIAR FAVORITOS HUÉRFANOS: Eliminar IDs que ya no existen
+        const validProductIds = new Set(mappedProducts.map(p => String(p.id)));
+        setFavoriteIds(prevFavorites => {
+          const cleanedFavorites = prevFavorites.filter(id => validProductIds.has(String(id)));
+          // Si se eliminaron favoritos, actualizar localStorage
+          if (cleanedFavorites.length !== prevFavorites.length) {
+            localStorage.setItem('favorites', JSON.stringify(cleanedFavorites));
+          }
+          return cleanedFavorites;
+        });
+        
         setLoading(false);
       })
       .catch(err => {
@@ -116,12 +150,11 @@ function AppContent() {
   const handleAddToCart = async (product: Product, size?: string, color?: string) => {
     // Si no viene talla/color (desde tarjeta rápida), usamos los primeros disponibles como fallback
     const finalSize = size || (product.sizes.length > 0 ? product.sizes[0] : "Única");
+    const finalColor = color || (product.colors.length > 0 ? product.colors[0] : "Sin especificar");
     
-    await addToCart(product, finalSize); 
+    await addToCart(product, finalSize, finalColor); 
     
-    toast.success(`${product.name} agregado al carrito`, {
-      description: `Talla: ${finalSize} ${color ? `- Color: ${color}` : ''}`,
-    });
+    toast.success(`${product.name} agregado al carrito`);
   };
 
   const handleUpdateQuantity = async (id: number, quantity: number) => {
@@ -133,9 +166,10 @@ function AppContent() {
     toast.success("Producto eliminado del carrito");
   };
 
-  const handleToggleFavorite = (id: number) => {
-    if (favoriteIds.includes(id)) {
-      setFavoriteIds(favoriteIds.filter((favId) => favId !== id));
+  const handleToggleFavorite = (id: number | string) => {
+    const stringId = String(id);
+    if (favoriteIds.some(favId => String(favId) === stringId)) {
+      setFavoriteIds(favoriteIds.filter((favId) => String(favId) !== stringId));
       toast.success("Producto eliminado de favoritos");
     } else {
       setFavoriteIds([...favoriteIds, id]);
@@ -152,13 +186,11 @@ function AppContent() {
     setIsCheckoutOpen(true);
   };
 
-  // Cálculo de totales
-  const cartTotal = cartItems.reduce(
+  // Cálculo de totales (los precios ya incluyen todo)
+  const total = cartItems.reduce(
     (sum, item) => sum + (item.price * item.quantity),
     0
   );
-  const shipping = cartTotal > 200 ? 0 : 15; // Envío gratis > 200 (ejemplo)
-  const total = cartTotal + shipping;
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">Cargando tienda...</div>;
@@ -171,6 +203,14 @@ function AppContent() {
       <Routes>
         {/* Rutas de Administración (SIN Layout de tienda) */}
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route 
+          path="/admin/orders" 
+          element={
+            <ProtectedAdminRoute>
+              <AdminOrders />
+            </ProtectedAdminRoute>
+          } 
+        />
         <Route 
           path="/admin/create-product" 
           element={
@@ -249,8 +289,7 @@ function AppContent() {
                   open={!!selectedProduct}
                   onClose={() => setSelectedProduct(null)}
                   onAddToCart={handleAddToCart}
-                  // Conversión segura de ID para favoritos (ya que BD usa string UUID y favoritos array de numbers)
-                  isFavorite={selectedProduct ? favoriteIds.includes(Number(selectedProduct.id)) : false}
+                  isFavorite={selectedProduct ? favoriteIds.some(favId => String(favId) === String(selectedProduct.id)) : false}
                   onToggleFavorite={handleToggleFavorite}
                 />
 
@@ -266,7 +305,7 @@ function AppContent() {
                 <FavoritesDrawer
                   open={isFavoritesOpen}
                   onClose={() => setIsFavoritesOpen(false)}
-                  favorites={products.filter((p) => favoriteIds.includes(Number(p.id)))}
+                  favorites={products.filter((p) => favoriteIds.some(favId => String(favId) === String(p.id)))}
                   onRemoveFavorite={handleToggleFavorite}
                   onViewDetails={setSelectedProduct}
                   onAddToCart={(product) => handleAddToCart(product)}
@@ -281,6 +320,11 @@ function AppContent() {
                     setIsCheckoutOpen(false);
                     setIsAuthOpen(true);
                     toast.error("Debes iniciar sesión para realizar el pago");
+                  }}
+                  onCheckoutSuccess={() => {
+                    // Limpiar el carrito después de un checkout exitoso
+                    localStorage.removeItem('cart');
+                    window.location.reload(); // Recargar para limpiar el estado
                   }}
                 />
 

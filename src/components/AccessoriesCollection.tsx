@@ -17,8 +17,8 @@ interface AccessoriesCollectionProps {
   onClose: () => void;
   products: Product[];
   onAddToCart: (product: Product) => void;
-  onToggleFavorite: (id: number) => void;
-  favoriteIds: number[];
+  onToggleFavorite: (id: number | string) => void;
+  favoriteIds: (string | number)[];
 }
 
 export function AccessoriesCollection({
@@ -257,7 +257,7 @@ export function AccessoriesCollection({
                       >
                         <Heart
                           className={`w-5 h-5 ${
-                            favoriteIds.includes(product.id)
+                            favoriteIds.some(favId => String(favId) === String(product.id))
                               ? "fill-red-500 text-red-500"
                               : "text-foreground"
                           }`}

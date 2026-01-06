@@ -5,8 +5,9 @@ import { Button } from '../components/ui/button';
 import { Textarea } from '../components/ui/textarea';
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
-import { Plus, X, Trash2, Box, RefreshCw, ArrowRight, Pencil, Image as ImageIcon, LogOut } from 'lucide-react';
+import { Plus, X, Trash2, Box, RefreshCw, ArrowRight, Pencil, Image as ImageIcon, LogOut, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import AdminOrders from './AdminOrders';
 
 // --- FUNCIÓN AUXILIAR PARA HEADERS CON AUTENTICACIÓN ---
 const getAuthHeaders = () => {
@@ -79,6 +80,8 @@ function ProductListManager({ onEdit }: { onEdit: (product: ProductList) => void
         return;
       }
       
+      // Disparar evento para recargar productos en la página principal
+      window.dispatchEvent(new Event('refreshProducts'));
       fetchProducts();
     } catch (error) {
       alert("Error al eliminar");
@@ -231,6 +234,9 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   
+  // NUEVO: Estado para múltiples imágenes por color
+  const [imagesByColor, setImagesByColor] = useState<{[color: string]: File[]}>({});
+  
   // Estados de variantes
   const [variants, setVariants] = useState<Variant[]>([]);
   const [selectedColor, setSelectedColor] = useState('#000000');
@@ -282,6 +288,10 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
             stock: String(v.stock)
         }));
         setVariants(mappedVariants);
+        
+        // NUEVO: Limpiar imagesByColor para que el usuario suba nuevas si quiere
+        setImagesByColor({});
+        setFile(null);
     }
   }, [initialData]);
 
@@ -372,15 +382,58 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
     setVariants(variants.filter((_, i) => i !== index));
   };
 
+  // NUEVO: Función para agregar imágenes a un color específico
+  const handleImagesForColor = (color: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    
+    const filesArray = Array.from(files);
+    setImagesByColor(prev => ({
+      ...prev,
+      [color]: [...(prev[color] || []), ...filesArray]
+    }));
+  };
+
+  // NUEVO: Función para eliminar una imagen específica de un color
+  const removeImageFromColor = (color: string, index: number) => {
+    setImagesByColor(prev => ({
+      ...prev,
+      [color]: prev[color].filter((_, i) => i !== index)
+    }));
+  };
+
+  // NUEVO: Obtener colores únicos de las variantes
+  const uniqueColors = Array.from(new Set(variants.map(v => v.color)));
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (variants.length === 0) return alert("Agrega al menos una variante");
+    
+    // Validar que haya imágenes
+    const totalImages = Object.values(imagesByColor).flat().length;
+    if (totalImages === 0 && !file && !initialData) {
+      return alert("Debes subir al menos una imagen por color");
+    }
     
     setLoading(true);
     try {
       const data = new FormData();
       Object.keys(formData).forEach(key => data.append(key, String((formData as any)[key])));
-      if (file) data.append('imageFile', file);
+      
+      // Agregar múltiples imágenes con sus colores
+      const imageColors: string[] = [];
+      uniqueColors.forEach(color => {
+        const colorImages = imagesByColor[color] || [];
+        colorImages.forEach(file => {
+          data.append('imageFiles', file);
+          imageColors.push(color);
+        });
+      });
+      
+      // Si no hay imágenes nuevas en modo edición, no enviar nada (mantener las existentes)
+      if (imageColors.length > 0) {
+        data.append('imageColors', JSON.stringify(imageColors));
+      }
+      
       data.append('variants', JSON.stringify(variants));
 
       // Lógica dinámica: Si hay initialData usamos PUT (Editar), si no POST (Crear)
@@ -405,6 +458,8 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
 
       if (res.ok) {
         alert(initialData ? '✅ Producto actualizado correctamente' : '✅ Producto creado correctamente');
+        // Disparar evento para recargar productos en la página principal
+        window.dispatchEvent(new Event('refreshProducts'));
         onSuccess();
       } else {
         alert('Error al guardar');
@@ -564,48 +619,87 @@ function ProductForm({ categories, onSuccess, initialData, onCancel }: ProductFo
         </div>
       </div>
 
-      {/* Imagen Principal */}
+      {/* Galería de Imágenes por Color */}
       <div className="bg-purple-50 p-8 rounded-2xl border-2 border-purple-200 space-y-5">
         <div className="flex items-center gap-3">
           <ImageIcon className="w-6 h-6 text-purple-600" />
-          <Label className="text-gray-900 font-bold text-xl">Imagen Principal del Producto</Label>
+          <Label className="text-gray-900 font-bold text-xl">Galería de Imágenes por Color</Label>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-          {/* Previsualización imagen actual si estamos editando */}
-          {initialData && initialData.images[0] && !file && (
-            <div className="relative group w-24 h-24 flex-shrink-0">
-              <img src={initialData.images[0].url} loading="lazy" className="w-full h-full object-cover rounded-xl border-2 border-gray-200" alt="Imagen actual" />
-              <div className="absolute inset-0 bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-white text-xs font-bold">Actual</span>
-              </div>
-            </div>
-          )}
-          
-          {file && (
-            <div className="relative group w-24 h-24 flex-shrink-0">
-              <img src={URL.createObjectURL(file)} loading="lazy" className="w-full h-full object-cover rounded-xl border-2 border-purple-300" alt="Nueva imagen" />
-              <div className="absolute inset-0 bg-purple-600/70 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <span className="text-white text-xs font-bold">Nueva</span>
-              </div>
-            </div>
-          )}
-          
-          <div className="flex-1 space-y-3">
-            <Input 
-              type="file" 
-              onChange={(e) => e.target.files && setFile(e.target.files[0])} 
-              accept="image/*" 
-              required={!initialData}
-              className="border-2 border-purple-300 focus:border-purple-500 h-14 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:bg-purple-600 file:text-white file:font-semibold hover:file:bg-purple-700 cursor-pointer text-base"
-            />
-            <p className="text-sm text-gray-700 font-medium bg-white/60 p-3 rounded-lg">
-              {initialData 
-                ? "💡 Sube una nueva imagen solo si quieres cambiar la actual"
-                : "📸 Formatos aceptados: JPG, PNG, WEBP (Max: 5MB)"}
+        <p className="text-sm text-gray-600">
+          Sube de 1 a 6 imágenes para cada color de tus variantes. Las imágenes se mostrarán en el orden que las subas.
+        </p>
+
+        {initialData && (
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+            <p className="text-blue-800 text-sm font-medium">
+              📝 <strong>Modo Edición:</strong> Si no subes nuevas imágenes, se mantendrán las actuales. 
+              Si subes nuevas, se reemplazarán todas las imágenes anteriores.
             </p>
           </div>
-        </div>
+        )}
+
+        {uniqueColors.length === 0 ? (
+          <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 text-center">
+            <p className="text-yellow-800 font-semibold">
+              ⚠️ Primero agrega variantes con colores para poder subir imágenes
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {uniqueColors.map((color) => (
+              <div key={color} className="bg-white p-6 rounded-xl border-2 border-gray-200 space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div 
+                    className="w-8 h-8 rounded-lg border-2 border-gray-300 shadow-sm flex-shrink-0"
+                    style={{ backgroundColor: color }}
+                  />
+                  <h4 className="font-bold text-gray-800">Color: {color}</h4>
+                  <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                    imagesByColor[color]?.length > 0 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {imagesByColor[color]?.length || 0} / 6 imágenes
+                  </span>
+                </div>
+
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => handleImagesForColor(color, e.target.files)}
+                  className="block w-full text-sm text-gray-600 file:mr-4 file:py-3 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 file:cursor-pointer cursor-pointer border-2 border-dashed border-gray-300 rounded-xl p-4"
+                  disabled={imagesByColor[color]?.length >= 6}
+                />
+
+                {imagesByColor[color] && imagesByColor[color].length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {imagesByColor[color].map((file, idx) => (
+                      <div key={idx} className="relative group aspect-square">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`Preview ${idx + 1}`}
+                          className="w-full h-full object-cover rounded-lg border-2 border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImageFromColor(color, idx)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                          #{idx + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 3. GESTOR DE INVENTARIO */}
@@ -986,7 +1080,7 @@ function CategoryManager() {
 // --- ADMIN PRINCIPAL ---
 export default function AdminManager() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'create' | 'list' | 'categories'>('list');
+  const [activeTab, setActiveTab] = useState<'create' | 'list' | 'categories' | 'orders'>('list');
   const [categories, setCategories] = useState<Category[]>([]);
   
   // ESTADO PARA EDICIÓN
@@ -1088,6 +1182,19 @@ export default function AdminManager() {
                 <Box className="w-5 h-5" />
                 <span>Categorías</span>
               </button>
+              
+              <button 
+                onClick={() => { setActiveTab('orders'); setProductToEdit(null); }} 
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium transition-all ${
+                  activeTab === 'orders' 
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'
+                }`}
+                style={activeTab === 'orders' ? { backgroundColor: '#4F46E5', color: '#FFFFFF' } : {}}
+              >
+                <Package className="w-5 h-5" />
+                <span>Gestión de Órdenes</span>
+              </button>
             </nav>
           </aside>
 
@@ -1120,6 +1227,8 @@ export default function AdminManager() {
               )}
 
               {activeTab === 'categories' && <CategoryManager />}
+              
+              {activeTab === 'orders' && <AdminOrders />}
             </div>
           </main>
         </div>

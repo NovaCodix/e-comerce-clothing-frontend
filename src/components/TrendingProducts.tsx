@@ -17,18 +17,10 @@ export function TrendingProducts({
   favoriteIds,
   onToggleFavorite,
 }: TrendingProductsProps) {
-  // Filtrar productos marcados como "en tendencia" (isTrending = true)
-  // Si no hay suficientes, complementar con nuevos y en oferta
-  const trendingProducts = products.filter((p) => p.isTrending && p.isActive);
-  
-  // Si hay menos de 4, complementar con productos nuevos o en oferta
-  const fallbackProducts = trendingProducts.length < 4
-    ? products
-        .filter((p) => !p.isTrending && (p.isNew || p.isSale) && p.isActive)
-        .slice(0, 4 - trendingProducts.length)
-    : [];
-  
-  const displayProducts = [...trendingProducts, ...fallbackProducts].slice(0, 4);
+  // Filtrar SOLO productos marcados como "en tendencia" (isTrending = true) y activos
+  const displayProducts = products
+    .filter((p) => p.isTrending && p.isActive)
+    .slice(0, 4);
 
   return (
     <section className="py-20 bg-background">

@@ -28,7 +28,7 @@ export default function AdminLogin() {
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('isAdminAuthenticated', 'true');
         toast.success("Bienvenido Administrador");
-        navigate('/admin/create-product'); // Te lleva al panel
+        navigate('/admin'); // Te lleva al panel
       } else {
         toast.error("Contraseña incorrecta");
       }

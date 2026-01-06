@@ -28,6 +28,15 @@ export interface Product {
   // INVENTARIO REAL (SKU)
   variants?: ProductVariant[];
   
+  // GALERÍA DE IMÁGENES (con colores asociados)
+  images?: Array<{
+    id?: string;
+    url: string;
+    color?: string;
+    order?: number;
+    isMain?: boolean;
+  }>;
+  
   isNew?: boolean;
   isSale?: boolean;
   isTrending?: boolean;  // ← AGREGADO: Indica si está en tendencia

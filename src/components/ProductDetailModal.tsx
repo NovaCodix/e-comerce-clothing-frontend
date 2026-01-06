@@ -43,29 +43,47 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
     }
   }, [open, product]);
 
-  if (!product) return null;
+  // Resetear imagen seleccionada cuando cambia el color
+  useEffect(() => {
+    setSelectedImage(0);
+  }, [selectedColor]);
 
-  const displayPrice = product.discountPrice || product.price;
-  const hasDiscount = !!product.discountPrice || !!product.originalPrice;
+  // --- LÓGICA DE IMÁGENES POR COLOR ---
+  // Filtrar imágenes por color seleccionado
+  const imagesForCurrentColor = useMemo(() => {
+    if (!product || !product.images || product.images.length === 0) {
+      // Fallback: usar imagen principal si no hay imágenes
+      return product ? [{ url: product.image, color: selectedColor }] : [];
+    }
+    
+    // Filtrar imágenes por color
+    const filtered = product.images.filter((img: any) => img.color === selectedColor);
+    
+    // Si no hay imágenes para este color, mostrar todas las imágenes del producto
+    // (esto ayuda si las imágenes no tienen color asignado aún)
+    if (filtered.length === 0) {
+      return product.images;
+    }
+    
+    return filtered;
+  }, [selectedColor, product]);
 
   // --- LÓGICA DE INVENTARIO ---
   // 1. Verificar stock de una talla para el color actual
   const checkStock = (sizeToCheck: string) => {
-    if (!product.variants || product.variants.length === 0) return 99; // Fallback para productos viejos
+    if (!product || !product.variants || product.variants.length === 0) return 99; // Fallback para productos viejos
     const variant = product.variants.find(v => v.size === sizeToCheck && v.color === selectedColor);
     return variant ? variant.stock : 0;
   };
 
   // 2. Stock de la selección actual
   const currentStock = selectedSize ? checkStock(selectedSize) : 0;
-  // ----------------------------
 
-  const productImages = [
-    { src: product.image, label: "Vista frontal" },
-    { src: product.image, label: "Vista lateral" },
-    { src: product.image, label: "Vista posterior" },
-    { src: product.image, label: "Detalle" },
-  ];
+  // IMPORTANTE: Retornar null después de todos los hooks
+  if (!product) return null;
+
+  const displayPrice = product.discountPrice || product.price;
+  const hasDiscount = !!product.discountPrice || !!product.originalPrice;
 
   const handleAddToCart = () => {
     if (selectedSize && selectedColor) {
@@ -89,9 +107,11 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
           <div>
             <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-muted mb-4">
               <ImageWithFallback
-                src={productImages[selectedImage].src}
-                alt={productImages[selectedImage].label}
-                className={`w-full h-full object-cover transition-all ${currentStock === 0 && selectedSize ? "grayscale opacity-80" : ""}`}
+                src={imagesForCurrentColor[selectedImage]?.url || product.image}
+                alt={`${product.name} - ${selectedColor}`}
+                className={`w-full h-full object-cover transition-all ${
+                  currentStock === 0 && selectedSize ? "grayscale opacity-80" : ""
+                }`}
               />
               
               <div className="absolute top-4 left-4 flex flex-col gap-2">
@@ -110,19 +130,31 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
               )}
             </div>
             
-            <div className="grid grid-cols-4 gap-2">
-              {productImages.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                    selectedImage === index ? "border-primary" : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <ImageWithFallback src={img.src} alt={img.label} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
+            {/* MINIATURAS */}
+            {imagesForCurrentColor.length > 1 && (
+              <div className="grid grid-cols-4 gap-2">
+                {imagesForCurrentColor.map((img: any, index: number) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImage(index)}
+                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                      selectedImage === index 
+                        ? "border-primary ring-2 ring-primary" 
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <ImageWithFallback 
+                      src={img.url} 
+                      alt={`Vista ${index + 1}`} 
+                      className="w-full h-full object-cover" 
+                    />
+                    <div className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                      {index + 1}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* DETALLES */}

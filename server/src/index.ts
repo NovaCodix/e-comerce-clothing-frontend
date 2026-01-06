@@ -191,7 +191,13 @@ app.delete('/api/categories/:id', authenticateAdmin, async (req: AuthRequest, re
 app.get('/api/products', async (req, res) => {
   try {
     const products = await prisma.product.findMany({
-      include: { images: true, variants: true, category: true },
+      include: { 
+        images: {
+          orderBy: { order: 'asc' } // Ordenar imágenes por el campo order
+        }, 
+        variants: true, 
+        category: true 
+      },
       orderBy: { createdAt: 'desc' }
     });
     res.json(products);
@@ -209,7 +215,7 @@ app.delete('/api/products/:id', authenticateAdmin, async (req: AuthRequest, res)
   }
 });
 
-app.post('/api/products', authenticateAdmin, upload.single('imageFile'), async (req: AuthRequest, res) => {
+app.post('/api/products', authenticateAdmin, upload.array('imageFiles', 10), async (req: AuthRequest, res) => {
   try {
     const { name, description, categoryId, gender,materialInfo, shippingInfo } = req.body;
     const basePrice = parseFloat(req.body.basePrice);
@@ -227,12 +233,38 @@ app.post('/api/products', authenticateAdmin, upload.single('imageFile'), async (
       variants = JSON.parse(req.body.variants);
     }
 
-    let imageUrl = '';
-    if (req.file) {
-      // Comprimir la imagen antes de guardarla
-      const compressedPath = await compressImage(req.file.path);
-      const filename = path.basename(compressedPath);
-      imageUrl = `http://localhost:${PORT}/uploads/${filename}`;
+    // Procesar múltiples imágenes con sus colores
+    const imageData = [];
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      const imageColors = req.body.imageColors ? JSON.parse(req.body.imageColors) : [];
+      
+      // Contador de orden por color
+      const orderByColor: { [key: string]: number } = {};
+      
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const color = imageColors[i] || null;
+        
+        // Inicializar contador para este color si no existe
+        if (color && !orderByColor[color]) {
+          orderByColor[color] = 0;
+        }
+        
+        // Comprimir la imagen antes de guardarla
+        const compressedPath = await compressImage(file.path);
+        const filename = path.basename(compressedPath);
+        const imageUrl = `http://localhost:${PORT}/uploads/${filename}`;
+        
+        imageData.push({
+          url: imageUrl,
+          isMain: i === 0, // La primera es la principal
+          color: color,
+          order: color ? orderByColor[color]++ : i // Orden específico por color
+        });
+      }
+      
+      console.log('📸 Imágenes procesadas:', imageData.length);
+      console.log('📸 Orden por color:', orderByColor);
     }
 
     const slug = name.toLowerCase().replace(/ /g, '-') + '-' + Date.now();
@@ -241,7 +273,7 @@ app.post('/api/products', authenticateAdmin, upload.single('imageFile'), async (
       data: {
         name, slug, description, materialInfo, shippingInfo, basePrice, discountPrice,
         categoryId, isTrending, isNewArrival, isFeatured, isActive,gender,
-        images: { create: [{ url: imageUrl, isMain: true }] },
+        images: { create: imageData },
         variants: {
           create: variants.map((v: any) => ({
             size: v.size,
@@ -261,7 +293,7 @@ app.post('/api/products', authenticateAdmin, upload.single('imageFile'), async (
 // ... (Tus otros endpoints)
 
 // PUT: ACTUALIZAR PRODUCTO - PROTEGIDA
-app.put('/api/products/:id', authenticateAdmin, upload.single('imageFile'), async (req: AuthRequest, res) => {
+app.put('/api/products/:id', authenticateAdmin, upload.array('imageFiles', 10), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { name, description, categoryId, materialInfo,gender, shippingInfo } = req.body;
@@ -282,20 +314,46 @@ app.put('/api/products/:id', authenticateAdmin, upload.single('imageFile'), asyn
       variants = JSON.parse(req.body.variants);
     }
 
-    // Lógica de Imagen: Si viene archivo nuevo, se usa. Si no, no tocamos la imagen.
+    // Lógica de Imagen: Si vienen archivos nuevos, se usan. Si no, no tocamos las imágenes.
     let imageData = {};
-    if (req.file) {
-      // Comprimir la imagen antes de guardarla
-      const compressedPath = await compressImage(req.file.path);
-      const filename = path.basename(compressedPath);
-      const imageUrl = `http://localhost:${PORT}/uploads/${filename}`;
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      const imageColors = req.body.imageColors ? JSON.parse(req.body.imageColors) : [];
+      const newImages = [];
       
-      // Primero borramos las viejas (opcional, pero limpio)
+      // Contador de orden por color
+      const orderByColor: { [key: string]: number } = {};
+      
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const color = imageColors[i] || null;
+        
+        // Inicializar contador para este color si no existe
+        if (color && !orderByColor[color]) {
+          orderByColor[color] = 0;
+        }
+        
+        // Comprimir la imagen antes de guardarla
+        const compressedPath = await compressImage(file.path);
+        const filename = path.basename(compressedPath);
+        const imageUrl = `http://localhost:${PORT}/uploads/${filename}`;
+        
+        newImages.push({
+          url: imageUrl,
+          isMain: i === 0,
+          color: color,
+          order: color ? orderByColor[color]++ : i // Orden específico por color
+        });
+      }
+      
+      console.log('📸 Actualizando imágenes:', newImages.length);
+      console.log('📸 Orden por color:', orderByColor);
+      
+      // Primero borramos las viejas
       await prisma.productImage.deleteMany({ where: { productId: id } });
-      // Preparamos la nueva
+      // Preparamos las nuevas
       imageData = {
         images: {
-          create: [{ url: imageUrl, isMain: true }]
+          create: newImages
         }
       };
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { PromoBar } from "./components/PromoBar";
 import { Header } from "./components/Header";
@@ -22,7 +22,6 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { useCart } from "./lib/supabase/hooks/useCart";
 import CreateProduct from './pages/CreateProduct';
 import AdminLogin from './pages/AdminLogin';
-import AdminOrders from './pages/AdminOrders';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 
 export default function App() {
@@ -74,8 +73,8 @@ function AppContent() {
     }
   }, [favoriteIds]);
 
-  // CARGAR DATOS DE LA BASE DE DATOS
-  useEffect(() => {
+  // FUNCIÓN PARA CARGAR/RECARGAR PRODUCTOS
+  const loadProducts = useCallback(() => {
     fetch('http://localhost:4000/api/products')
       .then(res => res.json())
       .then((data) => {
@@ -105,6 +104,7 @@ function AppContent() {
           colors: [...new Set(dbItem.variants.map((v: any) => v.color))],
           
           // DATOS COMPLETOS
+          images: dbItem.images || [],      // ← AGREGADO: Array completo de imágenes con colores
           variants: dbItem.variants,       // Array completo con stock real
           description: dbItem.description, // Texto de descripción
           materialInfo: dbItem.materialInfo, // Texto de materiales
@@ -137,6 +137,24 @@ function AppContent() {
         setLoading(false);
       });
   }, []);
+
+  // CARGAR DATOS DE LA BASE DE DATOS AL MONTAR
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  // ESCUCHAR EVENTO PERSONALIZADO PARA RECARGAR PRODUCTOS
+  useEffect(() => {
+    const handleRefresh = () => {
+      loadProducts();
+    };
+    
+    window.addEventListener('refreshProducts', handleRefresh);
+    
+    return () => {
+      window.removeEventListener('refreshProducts', handleRefresh);
+    };
+  }, [loadProducts]);
 
   useEffect(() => {
     if (darkMode) {
@@ -204,15 +222,7 @@ function AppContent() {
         {/* Rutas de Administración (SIN Layout de tienda) */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route 
-          path="/admin/orders" 
-          element={
-            <ProtectedAdminRoute>
-              <AdminOrders />
-            </ProtectedAdminRoute>
-          } 
-        />
-        <Route 
-          path="/admin/create-product" 
+          path="/admin/*" 
           element={
             <ProtectedAdminRoute>
               <CreateProduct />

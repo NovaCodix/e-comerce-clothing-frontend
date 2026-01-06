@@ -81,6 +81,8 @@ model ProductImage {
   url       String  // El LINK que te da Cloudinary o tu carpeta local
   altText   String? // Para accesibilidad (SEO)
   isMain    Boolean @default(false) // true = Foto de portada, false = Foto del carrusel
+  color     String? // Color asociado a esta imagen (HEX o nombre)
+  order     Int     @default(0) // Orden de visualización en la galería
   
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Filters } from "../components/Filters";
 import { ProductGrid } from "../components/ProductGrid";
 import { Product } from "../components/ProductCard";
@@ -12,16 +13,39 @@ interface CollectionProps {
   onViewDetails: (product: Product) => void;
   favoriteIds: (string | number)[];
   onToggleFavorite: (productId: number | string) => void;
+  onCategoryChange?: (category: string) => void; // Nueva prop para notificar cambio
 }
 
 export function Collection({
   products,
-  selectedCategory,
+  selectedCategory: propSelectedCategory,
   onAddToCart,
   onViewDetails,
   favoriteIds,
   onToggleFavorite,
+  onCategoryChange,
 }: CollectionProps) {
+  
+  const location = useLocation();
+  const state = location.state as { selectedCategory?: string } | null;
+  
+  // Usar la categoría del estado de navegación si existe, sino usar la prop
+  const [localCategory, setLocalCategory] = useState(propSelectedCategory);
+  
+  useEffect(() => {
+    // Si venimos con un estado de navegación específico (como desde Hero -> Ofertas)
+    if (state?.selectedCategory) {
+      setLocalCategory(state.selectedCategory);
+      // Notificar al padre (App.tsx) para actualizar el header
+      if (onCategoryChange) {
+        onCategoryChange(state.selectedCategory);
+      }
+    } else {
+      setLocalCategory(propSelectedCategory);
+    }
+  }, [state, propSelectedCategory, onCategoryChange]);
+  
+  const selectedCategory = localCategory;
   
   // Estado local para los filtros de la barra lateral (Izquierda)
   const [filters, setFilters] = useState({

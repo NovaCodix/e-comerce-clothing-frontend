@@ -1,7 +1,7 @@
 import { Button } from "./ui/button";
 import { motion } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export function Hero() {
@@ -36,6 +36,16 @@ export function Hero() {
       // Si no, navegar a colección
       navigate('/coleccion');
     }
+  };
+
+  const goToCollection = () => {
+    // Navegar a colección con estado para indicar que queremos ver Todos
+    navigate('/coleccion', { state: { selectedCategory: 'Todos' } });
+  };
+
+  const goToOffers = () => {
+    // Navegar a colección con estado para indicar que queremos ver Ofertas
+    navigate('/coleccion', { state: { selectedCategory: 'Ofertas' } });
   };
 
   return (
@@ -131,17 +141,31 @@ export function Hero() {
           >
             <Button
               size="lg"
-              onClick={scrollToContent}
-              className="w-full sm:w-auto bg-white text-[#2a2a2a] hover:bg-white/90 rounded-full px-8 sm:px-10 py-5 sm:py-6 shadow-2xl hover:shadow-3xl transition-all text-base sm:text-lg active:scale-95 cursor-pointer z-20"
+              onClick={goToCollection}
+              className="group relative w-full sm:w-auto bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 text-white hover:from-amber-600 hover:via-amber-700 hover:to-orange-700 rounded-full px-8 sm:px-12 py-6 sm:py-7 shadow-2xl hover:shadow-[0_20px_60px_rgba(245,158,11,0.5)] transition-all duration-300 text-base sm:text-lg font-bold active:scale-95 cursor-pointer z-20 border-2 border-white/20 overflow-hidden"
             >
-              Explorar Ahora
+              <span className="relative z-10 flex items-center gap-2">
+                Ir a Colección
+                <motion.span
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <ArrowRight className="w-5 h-5" />
+                </motion.span>
+              </span>
+              {/* Efecto de brillo animado */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                animate={{ x: ["-100%", "200%"] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
+              />
             </Button>
             
             <Button
               size="lg"
               variant="outline"
-              onClick={scrollToContent}
-              className="w-full sm:w-auto bg-transparent border-2 border-white text-white hover:bg-white/10 rounded-full px-8 sm:px-10 py-5 sm:py-6 text-base sm:text-lg active:scale-95 cursor-pointer z-20"
+              onClick={goToOffers}
+              className="w-full sm:w-auto bg-transparent border-2 border-white text-white hover:bg-white/10 rounded-full px-8 sm:px-10 py-5 sm:py-6 text-base sm:text-lg active:scale-95 cursor-pointer z-20 hover:border-amber-300 hover:text-amber-300 transition-all duration-300"
             >
               Ver Ofertas
             </Button>

@@ -283,6 +283,7 @@ function AppContent() {
                         onViewDetails={setSelectedProduct}
                         favoriteIds={favoriteIds}
                         onToggleFavorite={handleToggleFavorite}
+                        onCategoryChange={handleCategorySelect}
                       />
                     } 
                   />

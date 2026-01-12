@@ -48,15 +48,13 @@ export function Filters({ filters, onFilterChange }: FiltersProps) {
   };
 
   return (
-    <aside className="w-full lg:w-64 bg-background dark:bg-[#1a1a1a] lg:rounded-2xl px-6 pt-2 pb-6 lg:p-6 lg:border lg:border-border h-fit lg:sticky lg:top-24 lg:shadow-sm">
+    <aside className="w-full bg-white dark:bg-[#1a1a1a] px-6 pt-2 pb-6">
       <h3 className="mb-4 text-foreground hidden lg:block">Filtros</h3>
-      
-      <Separator className="my-4 hidden lg:block" />
       
       {/* Categories */}
       <div className="mb-6">
         <h4 className="mb-3 text-foreground">Categorías</h4>
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
           {categories.map((category) => (
             <div key={category} className="flex items-center space-x-2">
               <Checkbox
@@ -74,8 +72,6 @@ export function Filters({ filters, onFilterChange }: FiltersProps) {
           ))}
         </div>
       </div>
-
-      <Separator className="my-4" />
 
       {/* Sizes */}
       <div className="mb-6">
@@ -97,8 +93,6 @@ export function Filters({ filters, onFilterChange }: FiltersProps) {
         </div>
       </div>
 
-      <Separator className="my-4" />
-
       {/* Colors */}
       <div className="mb-6">
         <h4 className="mb-3 text-foreground">Colores</h4>
@@ -119,8 +113,6 @@ export function Filters({ filters, onFilterChange }: FiltersProps) {
           ))}
         </div>
       </div>
-
-      <Separator className="my-4" />
 
       {/* Price Range */}
       <div className="mb-6">

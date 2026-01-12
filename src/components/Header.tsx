@@ -73,10 +73,18 @@ export function Header({
       document.documentElement.style.setProperty("--header-offset", h + "px");
     };
 
+    // Actualizar inmediatamente
     updateSpacer();
+    
+    // Actualizar después de un pequeño delay para asegurar que el DOM esté listo
+    const timer = setTimeout(updateSpacer, 100);
+    
     window.addEventListener("resize", updateSpacer);
-    return () => window.removeEventListener("resize", updateSpacer);
-  }, []);
+    return () => {
+      window.removeEventListener("resize", updateSpacer);
+      clearTimeout(timer);
+    };
+  }, [location.pathname]); // Re-calcular cuando cambia la ruta
 
   const handleCategoryClick = (category: string) => {
     onCategorySelect(category);
@@ -104,7 +112,7 @@ export function Header({
   return (
     <>
       <header
-        className="bg-background/95 backdrop-blur-lg border-b border-border fixed left-0 right-0 z-50 transition-transform duration-300"
+        className="bg-white dark:bg-[#1a1a1a] border-b border-border fixed left-0 right-0 z-50 transition-transform duration-300 shadow-sm"
         // keep header positioned at top and animate its visual position with transform (GPU-accelerated)
         style={{ top: 0, transform: 'translateY(var(--promo-height, 0px))' }}
         ref={headerRef}
@@ -184,7 +192,7 @@ export function Header({
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="md:hidden rounded-full hover:bg-[#f5f0ed] dark:hover:bg-accent transition-all duration-200"
+                  className="md:hidden rounded-full hover:bg-gray-50 dark:hover:bg-accent transition-all duration-200"
                   aria-label="Abrir menú"
                 >
                   <Menu className="w-5 h-5" />
@@ -192,16 +200,16 @@ export function Header({
               </SheetTrigger>
               <SheetContent 
                 side="right" 
-                className="w-[320px] sm:w-[380px] p-0 flex flex-col bg-background/95 backdrop-blur-xl border-l-2 border-border/50 shadow-2xl"
+                className="w-[320px] sm:w-[380px] p-0 flex flex-col bg-white dark:bg-[#1a1a1a] border-l-2 border-border/50 shadow-2xl"
               >
-                <SheetHeader className="px-6 pt-6 pb-4 border-b border-border flex-shrink-0 bg-background/80">
+                <SheetHeader className="px-6 pt-6 pb-4 border-b border-border flex-shrink-0 bg-white dark:bg-[#1a1a1a]">
                   <SheetTitle className="text-left">Menú</SheetTitle>
                   <SheetDescription className="text-left">
                     Explora nuestras categorías
                   </SheetDescription>
                 </SheetHeader>
                 
-                <div className="flex-1 overflow-y-auto px-6 py-6 bg-background/95">
+                <div className="flex-1 overflow-y-auto px-6 py-6 bg-white dark:bg-[#1a1a1a]">
                   <div className="space-y-8">
                     {/* Categories */}
                     <div className="space-y-2">
@@ -292,26 +300,43 @@ export function Header({
       {location.pathname !== "/" && location.pathname !== "/seguimiento" && (
         <nav className="hidden md:block border-t border-border">
           <div className="container mx-auto px-4">
-            <ul className="flex items-center justify-center gap-8 py-3">
-              {categories.map((category) => (
-                <li key={category}>
-                  <button 
-                    onClick={() => handleCategoryClick(category)}
-                    className={`hover:text-primary transition-colors relative ${
-                      selectedCategory === category ? "text-primary" : ""
-                    }`}
-                  >
-                    {category}
-                    {selectedCategory === category && (
-                      <motion.div
-                        layoutId="category-underline"
-                        className="absolute -bottom-3 left-0 right-0 h-0.5 bg-primary"
-                      />
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="flex items-center justify-between">
+              <ul className="flex items-center justify-center gap-8 py-3 flex-1">
+                {categories.map((category) => (
+                  <li key={category}>
+                    <button 
+                      onClick={() => handleCategoryClick(category)}
+                      className={`hover:text-primary transition-colors relative ${
+                        selectedCategory === category ? "text-primary" : ""
+                      }`}
+                    >
+                      {category}
+                      {selectedCategory === category && (
+                        <motion.div
+                          layoutId="category-underline"
+                          className="absolute -bottom-3 left-0 right-0 h-0.5 bg-primary"
+                        />
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Trigger filter drawer open
+                  const event = new CustomEvent('openFilters');
+                  window.dispatchEvent(event);
+                }}
+                className="flex items-center gap-2 hover:bg-accent rounded-full"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                <span className="font-medium">FILTRO</span>
+              </Button>
+            </div>
           </div>
         </nav>
       )}
@@ -327,8 +352,10 @@ export function Header({
 
     {/* Spacer to prevent content being hidden behind the fixed header.
       We set its height dynamically in JS to match the header's real height
-      (covers promo + nav rows). */}
-    <div aria-hidden="true" className="header-spacer" ref={spacerRef} />
+      (covers promo + nav rows). Only show on collection page, not on home. */}
+    {location.pathname !== "/" && (
+      <div aria-hidden="true" className="header-spacer" ref={spacerRef} />
+    )}
     
     {/* User account modal disabled for now */}
     </>

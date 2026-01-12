@@ -33,7 +33,7 @@ export function AboutSection() {
   ];
 
   return (
-    <section id="about-section" className="py-20 bg-gradient-to-b from-muted/30 to-background">
+    <section id="about-section" className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

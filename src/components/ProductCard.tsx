@@ -77,7 +77,7 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -8 }}
       transition={{ duration: 0.3 }}
-      className="group bg-background dark:bg-[#1a1a1a] rounded-2xl overflow-hidden border border-border hover:shadow-2xl hover:border-primary/30 transition-all duration-300"
+      className="group bg-background dark:bg-[#1a1a1a] rounded-none overflow-hidden border border-border hover:shadow-2xl hover:border-primary/30 transition-all duration-300"
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f0ed] cursor-pointer" onClick={() => onViewDetails(product)}>
         
@@ -154,66 +154,15 @@ export function ProductCard({ product, onAddToCart, onViewDetails, isFavorite, o
               onToggleFavorite(product.id);
             }
           }}
-          className={`absolute top-3 right-3 w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center transition-all ${
+          className={`absolute top-3 right-3 w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all ${
             isFavorite 
               ? "bg-[#f4b8c4] opacity-100" 
-              : "bg-white/90 opacity-0 group-hover:opacity-100 hover:bg-white"
+              : "bg-white/90 opacity-100 hover:bg-white"
           }`}
           aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
         >
-          <Heart className={`w-5 h-5 transition-all ${isFavorite ? "fill-white text-white" : ""}`} />
+          <Heart className={`w-6 h-6 transition-all ${isFavorite ? "fill-white text-white" : ""}`} />
         </motion.button>
-
-        {/* Quick actions overlay (SOLO SI HAY STOCK) */}
-        {!isOutOfStock && (
-            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                size="sm"
-                className="w-full bg-white text-[#2a2a2a] hover:bg-white/90 rounded-full font-semibold"
-                onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                  e.stopPropagation();
-                  onAddToCart(product);
-                }}
-              >
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Agregar al Carrito
-              </Button>
-            </div>
-        )}
-      </div>
-
-      <div className="p-4">
-        <p className="text-muted-foreground dark:text-[#CCCCCC] mb-1">{product.category}</p>
-        <h4 className="mb-2 line-clamp-1 text-foreground dark:text-[#FFFFFF]">{product.name}</h4>
-        
-        <div className="flex items-center gap-2">
-          {/* Precio Actual */}
-          <span className={`text-foreground dark:text-[#FFFFFF] ${hasDiscount ? "text-red-500 font-bold" : ""}`}>
-            S/ {displayPrice.toFixed(2)}
-          </span>
-          
-          {/* Precio Original Tachado (Si hay descuento) */}
-          {hasDiscount && (
-            <span className="text-muted-foreground dark:text-[#CCCCCC] line-through text-sm">
-              S/ {product.price.toFixed(2)}
-            </span>
-          )}
-        </div>
-        
-        {/* Colors preview */}
-        <div className="flex gap-1 mt-3">
-          {product.colors.slice(0, 4).map((color, index) => (
-            <div
-              key={index}
-              className="w-5 h-5 rounded-full border border-border shadow-sm"
-              style={{ backgroundColor: color }}
-              title={color}
-            />
-          ))}
-          {product.colors.length > 4 && (
-             <span className="text-xs text-muted-foreground ml-1">+{product.colors.length - 4}</span>
-          )}
-        </div>
       </div>
     </motion.div>
   );

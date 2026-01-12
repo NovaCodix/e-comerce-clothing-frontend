@@ -124,4 +124,3 @@ export function useCart(products: Product[]) {
     clearCart,
   };
 }
-

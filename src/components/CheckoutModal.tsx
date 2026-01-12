@@ -168,7 +168,7 @@ export function CheckoutModal({ open, onClose, items, total, onAuthRequired, onC
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-background p-6 sm:p-8">
+    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#1a1a1a] p-6 sm:p-8">
         <DialogHeader>
           <DialogTitle>Finalizar Compra</DialogTitle>
           <DialogDescription className="sr-only">
@@ -273,7 +273,7 @@ export function CheckoutModal({ open, onClose, items, total, onAuthRequired, onC
             </div>
 
             {/* Opción de Delivery */}
-            <div className="bg-muted/50 p-6 rounded-xl border">
+            <div className="bg-gray-50 dark:bg-[#252525] p-6 rounded-xl border">
               <div className="flex items-start gap-5">
                 <input
                   type="checkbox"
@@ -341,7 +341,7 @@ export function CheckoutModal({ open, onClose, items, total, onAuthRequired, onC
           {/* Payment Details: mostrar sólo Yape (QR) y Cuenta de la tienda. */}
 
           {paymentMethod === "yape" && (
-            <div className="bg-muted p-6 rounded-xl text-center border border-white/20 dark:border-[#18303a]">
+            <div className="bg-gray-50 dark:bg-[#252525] p-6 rounded-xl text-center border border-white/20 dark:border-[#18303a]">
               <p className="mb-3">Escanea este QR con Yape para pagar</p>
               <div className="w-56 h-56 bg-white/95 dark:bg-[#071522] mx-auto rounded-xl flex items-center justify-center border border-white/20 dark:border-[#18303a] shadow-sm">
                 {/* Ideal: reemplazar por imagen de QR real: <img src="/path/to/yape-qr.png" className="w-full h-full object-contain rounded-md" /> */}
@@ -432,7 +432,7 @@ export function CheckoutModal({ open, onClose, items, total, onAuthRequired, onC
           <Separator />
 
           {/* Order Summary */}
-          <div className="bg-muted p-6 rounded-xl space-y-3">
+          <div className="bg-gray-50 dark:bg-[#252525] p-6 rounded-xl space-y-3">
             <h3 className="mb-4">Resumen del Pedido</h3>
             {items.map((item) => (
               <div key={`${item.id}-${item.selectedSize}`} className="flex justify-between">

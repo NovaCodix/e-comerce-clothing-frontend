@@ -57,6 +57,22 @@ export function Collection({
   
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
+  // Scroll al inicio cada vez que se navega a esta página
+  useEffect(() => {
+    // Pequeño delay para asegurar que el DOM esté listo
+    const timer = setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [location.pathname]); // Se ejecuta cada vez que cambia la ruta
+
+  // Escuchar evento del botón de filtro en el header
+  useEffect(() => {
+    const handleOpenFilters = () => setIsFiltersOpen(true);
+    window.addEventListener('openFilters', handleOpenFilters);
+    return () => window.removeEventListener('openFilters', handleOpenFilters);
+  }, []);
+
   // --- LÓGICA DE FILTRADO MAESTRA ---
   const filteredProducts = products.filter((product) => {
     
@@ -111,37 +127,21 @@ export function Collection({
   });
 
   return (
-    <main
-      id="products-section"
-      className="container mx-auto px-4 pb-40 md:pb-48 flex-1 w-full min-h-[calc(100vh-200px)]"
-      style={{ paddingTop: "calc(var(--header-offset, 0px) + 1rem)" }}
-    >
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Sidebar Desktop */}
-        <div className="hidden lg:block w-64 flex-shrink-0">
-          <Filters filters={filters} onFilterChange={setFilters} />
-        </div>
-
+    <>
+      <main
+        id="products-section"
+        className="container mx-auto px-4 pb-40 md:pb-48 flex-1 w-full min-h-[calc(100vh-200px)] bg-white"
+      >
+      <div className="flex flex-col gap-8">
         {/* Grilla de Productos */}
         <div className="flex-1">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="mb-2 text-2xl font-bold">
-                {selectedCategory === "Todos" ? "Nuestra Colección" : selectedCategory}
-              </h2>
-              <p className="text-muted-foreground">
-                {filteredProducts.length} productos encontrados
-              </p>
-            </div>
-
-            {/* Botón Filtros Móvil */}
-            <Button 
-              variant="outline" 
-              className="lg:hidden rounded-full"
-              onClick={() => setIsFiltersOpen(true)}
-            >
-              Filtros
-            </Button>
+          <div className="mb-8 mt-8">
+            <h2 className="mb-2 text-2xl font-bold">
+              {selectedCategory === "Todos" ? "Nuestra Colección" : selectedCategory}
+            </h2>
+            <p className="text-muted-foreground">
+              {filteredProducts.length} productos encontrados
+            </p>
           </div>
 
           {filteredProducts.length > 0 ? (
@@ -153,7 +153,7 @@ export function Collection({
               onToggleFavorite={onToggleFavorite}
             />
           ) : (
-            <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed">
+            <div className="text-center py-20 bg-white rounded-xl border border-dashed">
               <p className="text-xl text-gray-500 font-medium">No se encontraron productos.</p>
               <p className="text-sm text-gray-400 mt-2">Intenta cambiar de pestaña o limpiar los filtros laterales.</p>
               <Button 
@@ -167,21 +167,21 @@ export function Collection({
           )}
         </div>
       </div>
+      </main>
 
-      {/* Drawer Filtros Móvil */}
+      {/* Drawer Filtros - Sale desde la derecha */}
       <Sheet open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-        <SheetContent side="left" className="w-full sm:w-80 overflow-y-auto p-0 flex flex-col bg-white">
-          <SheetHeader className="px-6 pt-6 pb-2 flex-shrink-0">
-            <SheetTitle>Filtros</SheetTitle>
-            <SheetDescription className="sr-only">
-              Filtra productos por categorías, tallas, colores y precio
+        <SheetContent side="right" className="w-full sm:w-96 overflow-y-auto p-0 flex flex-col bg-white dark:bg-[#1a1a1a]">
+          <SheetHeader className="px-6 pt-6 pb-4 flex-shrink-0 bg-white dark:bg-[#1a1a1a]">
+            <SheetTitle></SheetTitle>
+            <SheetDescription>
             </SheetDescription>
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <div className="flex-1 overflow-y-auto px-6 py-6">
             <Filters filters={filters} onFilterChange={setFilters} />
           </div>
         </SheetContent>
       </Sheet>
-    </main>
+    </>
   );
 }

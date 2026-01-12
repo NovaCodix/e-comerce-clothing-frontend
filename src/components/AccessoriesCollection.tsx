@@ -74,8 +74,8 @@ export function AccessoriesCollection({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent 
-        className="max-w-[95vw] lg:max-w-7xl max-h-[90vh] overflow-y-auto p-0 bg-background"
+      <DialogContent
+        className="max-w-[95vw] lg:max-w-7xl max-h-[90vh] overflow-y-auto p-0 bg-white dark:bg-[#1a1a1a]"
         style={{
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain',
@@ -244,7 +244,7 @@ export function AccessoriesCollection({
                   whileHover={{ y: -10 }}
                 >
                   <Card className="overflow-hidden group hover:shadow-2xl transition-all duration-300 border-2 hover:border-primary/30">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+                    <div className="relative aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-[#252525]">
                       <ImageWithFallback
                         src={product.image}
                         alt={product.name}

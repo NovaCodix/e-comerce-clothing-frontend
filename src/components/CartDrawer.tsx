@@ -53,8 +53,8 @@ export function CartDrawer({ open, onClose, items, onUpdateQuantity, onRemoveIte
             {/* Items list */}
             <div className="flex-1 overflow-y-auto py-6 px-6 space-y-4">
               {items.map((item) => (
-                <div key={`${item.id}-${item.selectedSize}`} className="flex gap-4 bg-muted/30 rounded-xl p-4 border border-border">
-                  <div className="w-24 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                <div key={`${item.id}-${item.selectedSize}`} className="flex gap-4 bg-gray-50 dark:bg-[#252525] rounded-xl p-4 border border-border">
+                  <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 dark:bg-[#1a1a1a] flex-shrink-0">
                     <ImageWithFallback
                       src={item.image}
                       alt={item.name}

@@ -92,7 +92,8 @@ export function PromoBar() {
           initial={{ height: "auto", opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="bg-primary text-primary-foreground py-2 px-4 relative overflow-hidden"
+          className="py-2 px-4 relative overflow-hidden"
+          style={{ backgroundColor: '#000000', color: '#ffffff' }}
         >
           <div className="container mx-auto flex items-center justify-center gap-2">
             <AnimatePresence mode="wait">

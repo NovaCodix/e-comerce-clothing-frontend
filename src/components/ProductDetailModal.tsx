@@ -98,14 +98,14 @@ export function ProductDetailModal({ product, open, onClose, onAddToCart, isFavo
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background dark:bg-[#1a1a1a]">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#1a1a1a]">
         <DialogTitle className="sr-only">{product.name}</DialogTitle>
         <DialogDescription className="sr-only">Detalle del producto</DialogDescription>
         
         <div className="grid md:grid-cols-2 gap-8">
           {/* GALERÍA */}
           <div>
-            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-muted mb-4">
+            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 dark:bg-[#252525] mb-4">
               <ImageWithFallback
                 src={imagesForCurrentColor[selectedImage]?.url || product.image}
                 alt={`${product.name} - ${selectedColor}`}

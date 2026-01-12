@@ -237,9 +237,9 @@ function AppContent() {
             <>
               <AnimatedBackground darkMode={darkMode} />
               
-              <div className="min-h-screen bg-background/50 flex flex-col w-full">
-                <PromoBar />
-                
+              <PromoBar />
+              
+              <div className="min-h-screen bg-white flex flex-col w-full">
                 <Header
                   onCartClick={() => setIsCartOpen(true)}
                   onAuthClick={() => setIsAuthOpen(true)}

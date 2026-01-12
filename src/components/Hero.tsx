@@ -49,7 +49,7 @@ export function Hero() {
   };
 
   return (
-    <section className="relative h-[70vh] md:h-[80vh] overflow-hidden bg-[#f5ebe0]">
+    <section className="relative h-[70vh] md:h-[80vh] overflow-hidden bg-white">
       {/* Animated background image */}
       <motion.div
         initial={{ scale: 1.1 }}

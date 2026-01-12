@@ -3,7 +3,7 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Mail, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { ScrollReveal } from "./ScrollReveal";
 
 export function NewsletterSection() {
@@ -20,9 +20,9 @@ export function NewsletterSection() {
   };
 
   return (
-    <section className="py-20 relative overflow-hidden">
+    <section className="py-20 relative overflow-hidden bg-white">
       {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/10 to-primary/10" />
+      <div className="absolute inset-0 bg-white" />
       
       {/* Animated circles */}
       <motion.div

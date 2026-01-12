@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog@1.1.6";
-import { XIcon } from "lucide-react@0.487.0";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { XIcon } from "lucide-react";
 
 import { cn } from "./utils";
 
@@ -79,8 +79,8 @@ function DialogContent({
           {...props}
         >
           {children}
-          <DialogPrimitive.Close 
-            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[150] inline-flex items-center justify-center rounded-full w-10 h-10 sm:w-11 sm:h-11 bg-background/95 backdrop-blur-sm border-2 border-border shadow-lg transition-all duration-200 hover:bg-accent hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:pointer-events-none touch-manipulation"
+          <DialogPrimitive.Close
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[150] inline-flex items-center justify-center rounded-full w-10 h-10 sm:w-11 sm:h-11 bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm border-2 border-border shadow-lg transition-all duration-200 hover:bg-accent hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:pointer-events-none touch-manipulation"
             style={{
               pointerEvents: 'auto',
               touchAction: 'manipulation',
